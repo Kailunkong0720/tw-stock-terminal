@@ -49,6 +49,7 @@ INDUSTRIES: dict[str, tuple[str, list[str]]] = {
 }
 
 TAIEX = "TWSE:發行量加權股價指數"
+TAIEX_TR = "TWSE:發行量加權股價報酬指數"
 
 
 def industry_name(code: str | None) -> str | None:
@@ -59,8 +60,13 @@ def industry_name(code: str | None) -> str | None:
 
 
 def sector_index_ids(industry: str | None) -> list[str]:
-    """產業名稱 → 類股指數 index_id 候選（依優先順序）。"""
+    """產業名稱 → 類股（價格）指數 index_id 候選（依優先順序）。"""
     for name, indices in INDUSTRIES.values():
         if name == industry:
             return [f"TWSE:{i}" for i in indices]
     return []
+
+
+def sector_tr_ids(industry: str | None) -> list[str]:
+    """產業名稱 → 類股報酬指數（含息）index_id 候選。「半導體類指數」→「半導體類報酬指數」。"""
+    return [i.replace("類指數", "類報酬指數") for i in sector_index_ids(industry)]

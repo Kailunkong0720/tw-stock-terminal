@@ -63,13 +63,37 @@ def _step_flows(s: Settings) -> None:
     ingest_institutional(s)
 
 
-# 會對外發請求的步驟，依序執行。執行時持有「net」鎖，保證同一時間只有一個程序在對證交所發請求
-# （兩個程序各自限速 3 秒，合起來就變成 1.5 秒，等於違反限速）。
+def _step_global(s: Settings) -> None:
+    from pipeline.ingest.global_markets import ingest_global
+
+    ingest_global(s)
+
+
+def _step_moves(s: Settings) -> None:
+    from pipeline.events.factor_model import compute_moves
+
+    compute_moves(s)
+
+
+# 會對外發請求的步驟，依序執行。
 INGEST_STEPS: dict[str, Step] = {
     "daily": _step_daily,
     "actions": _step_actions,
     "company": _step_company,
     "flows": _step_flows,
+    "global": _step_global,
+}
+
+# 每個步驟執行時持有的鎖。「net」保證同一時間只有一個程序在對證交所發請求
+# （兩個程序各自限速 3 秒，合起來就變成 1.5 秒，等於違反限速）；其他主機各自一把；
+# 吃 CPU 的模型推論用「cpu」。
+STEP_LOCKS: dict[str, str] = {
+    "daily": "net",
+    "actions": "net",
+    "company": "net",
+    "flows": "net",
+    "global": "net-yahoo",
+    "forecast": "cpu",
 }
 
 
@@ -82,6 +106,7 @@ def _step_forecast(s: Settings) -> None:
 BUILD_STEPS: list[tuple[str, Step]] = [
     ("migrate", _step_migrate),
     *INGEST_STEPS.items(),
+    ("moves", _step_moves),
     ("forecast", _step_forecast),
     ("export", _step_export),
 ]
@@ -107,10 +132,14 @@ def _setup_logging(settings: Settings, verbose: bool) -> None:
 
 
 def _run_steps(settings: Settings, name: str, steps: list[tuple[str, Step]]) -> None:
-    with step_lock(settings.run_dir, name), step_lock(settings.run_dir, "net"):
+    from contextlib import nullcontext
+
+    with step_lock(settings.run_dir, name):
         for step_name, fn in steps:
+            lock = STEP_LOCKS.get(step_name)
             log.info("── %s", step_name)
-            fn(settings)
+            with step_lock(settings.run_dir, lock) if lock else nullcontext():
+                fn(settings)
 
 
 def cmd_status(settings: Settings) -> None:
@@ -204,6 +233,7 @@ def main(argv: list[str] | None = None) -> int:
     p_fc.add_argument("symbols", nargs="*", help="只跑指定代號（預設：追蹤池）")
     p_bt = sub.add_parser("backtest", help="Kronos 滾動回測（可續跑，耗時數小時）")
     p_bt.add_argument("symbols", nargs="*", help="只跑指定代號（預設：追蹤池）")
+    sub.add_parser("moves", help="因子拆解與異常波動日偵測")
     sub.add_parser("status", help="顯示狀態")
     sub.add_parser("check", help="資料品質檢查（還原後漲跌幅不變量）")
     sub.add_parser("migrate", help="升級資料庫結構")
@@ -221,7 +251,7 @@ def main(argv: list[str] | None = None) -> int:
             _run_steps(settings, "refresh", REFRESH_STEPS)
         elif args.cmd == "ingest":
             _step_migrate(settings)
-            _run_steps(settings, "ingest", [(n, INGEST_STEPS[n]) for n in args.steps])
+            _run_steps(settings, "ingest-" + "-".join(args.steps), [(n, INGEST_STEPS[n]) for n in args.steps])
         elif args.cmd == "export":
             with step_lock(settings.run_dir, "export"):
                 _step_export(settings)
@@ -237,6 +267,10 @@ def main(argv: list[str] | None = None) -> int:
             # 模型推論吃 CPU，不碰網路（權重第一次下載後就有快取）：用 cpu 鎖，可與 net 回補同時進行
             with step_lock(settings.run_dir, "cpu"):
                 (run_latest if args.cmd == "forecast" else run_backtest)(settings, args.symbols or None)
+        elif args.cmd == "moves":
+            _step_migrate(settings)
+            with step_lock(settings.run_dir, "moves"):
+                _step_moves(settings)
         elif args.cmd == "status":
             cmd_status(settings)
         elif args.cmd == "check":

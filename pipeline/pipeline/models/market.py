@@ -106,6 +106,24 @@ class MarketFlow(Base):
     net: Mapped[int] = mapped_column(Integer)
 
 
+class PriceMove(Base):
+    """每日報酬的因子拆解（PLAN.md 6.1）。ret = mkt + sector + overnight + idio。"""
+
+    __tablename__ = "price_move"
+
+    symbol: Mapped[str] = mapped_column(String(16), primary_key=True)
+    date: Mapped[date] = mapped_column(Date, primary_key=True)
+    ret: Mapped[float] = mapped_column(Float)
+    gap: Mapped[int] = mapped_column(Integer)
+    mkt: Mapped[float | None] = mapped_column(Float, nullable=True)
+    sector: Mapped[float | None] = mapped_column(Float, nullable=True)
+    overnight: Mapped[float | None] = mapped_column(Float, nullable=True)
+    idio: Mapped[float | None] = mapped_column(Float, nullable=True)
+    z: Mapped[float | None] = mapped_column(Float, nullable=True)
+    vol_ratio: Mapped[float | None] = mapped_column(Float, nullable=True)
+    anomaly: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class ForeignHolding(Base):
     """外資及陸資持股（MI_QFIIS）。"""
 

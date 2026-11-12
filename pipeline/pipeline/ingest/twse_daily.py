@@ -95,15 +95,19 @@ def parse_mi_index(payload: dict, day: date) -> DayResult:
             }
         )
 
-    idx = find_table(payload, title_contains="價格指數(臺灣證券交易所)")
-    if idx is not None:
+    # 價格指數與報酬指數（含息）。因子模型用報酬指數：權重股除息時價格指數會下跌，
+    # 用價格指數會把除息誤當成類股下跌（例：2603 長榮 2023-06-30 除息，航運類價格指數當日 −9.9%）。
+    for title, name_col in (("價格指數(臺灣證券交易所)", "指數"), ("報酬指數(臺灣證券交易所)", "報酬指數")):
+        idx = find_table(payload, title_contains=title)
+        if idx is None:
+            continue
         for r in rows_as_dicts(idx["fields"], idx["data"]):
             close = to_float(r.get("收盤指數"))
             if close is None:
                 continue
             out.indices.append(
                 {
-                    "index_id": f"TWSE:{clean_name(r['指數'])}",
+                    "index_id": f"TWSE:{clean_name(r[name_col])}",
                     "date": day,
                     "close": close,
                     "change": signed(sign_of(r.get("漲跌(+/-)")), to_float(r.get("漲跌點數"))),

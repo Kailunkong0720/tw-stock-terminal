@@ -10,6 +10,7 @@ from pipeline.models.market import (
     IndexBar,
     InstitutionalFlow,
     MarketFlow,
+    PriceMove,
     Security,
 )
 
@@ -24,5 +25,6 @@ __all__ = [
     "IngestLog",
     "InstitutionalFlow",
     "MarketFlow",
+    "PriceMove",
     "Security",
 ]
