@@ -70,6 +70,9 @@ class CorporateAction(Base):
     affects_shares: Mapped[bool] = mapped_column(Boolean, default=False)
     detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     source: Mapped[str] = mapped_column(String(16))
+    # 該日的漲跌停價（報表提供）。含現增的除權日漲跌停不對稱，資料品質檢查用這兩個值
+    limit_up: Mapped[float | None] = mapped_column(Float, nullable=True)
+    limit_down: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 
 class InstitutionalFlow(Base):

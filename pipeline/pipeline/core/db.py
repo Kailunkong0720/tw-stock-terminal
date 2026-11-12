@@ -14,11 +14,14 @@ from pipeline.core.config import PIPELINE_DIR, Settings, get_settings
 
 def make_engine(settings: Settings) -> Engine:
     settings.ensure_dirs()
-    engine = create_engine(settings.db_url, future=True)
+    # timeout / busy_timeout：背景回補與其他指令（export、check）同時存取時，遇到寫入鎖最多等 60 秒，
+    # 而不是預設的 5 秒就失敗
+    engine = create_engine(settings.db_url, future=True, connect_args={"timeout": 60})
 
     @event.listens_for(engine, "connect")
     def _pragmas(dbapi_conn, _record):  # noqa: ANN001
         cur = dbapi_conn.cursor()
+        cur.execute("PRAGMA busy_timeout=60000")
         cur.execute("PRAGMA journal_mode=WAL")
         cur.execute("PRAGMA synchronous=NORMAL")
         cur.execute("PRAGMA foreign_keys=ON")

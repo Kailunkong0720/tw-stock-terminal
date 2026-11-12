@@ -24,6 +24,41 @@ def test_parse_twt49u_fixture():
     assert all(0 < x["factor"] <= 1.0001 for x in rows), "除權息的參考價不會高於前收"
 
 
+def test_twt49u_rights_issue_uses_dividend_only_reference():
+    """含現金增資的除權：用減除股利參考價（2429 銘旺科 2024-07-02 的實際數值）。"""
+    fields = [
+        "資料日期",
+        "股票代號",
+        "股票名稱",
+        "除權息前收盤價",
+        "除權息參考價",
+        "權值+息值",
+        "權/息",
+        "漲停價格",
+        "跌停價格",
+        "開盤競價基準",
+        "減除股利參考價",
+    ]
+    pure = {
+        "stat": "OK",
+        "fields": fields,
+        "data": [
+            ["113年07月02日", "2429", "銘旺科", "38.90", "29.15", "9.743493", "權", "42.75", "35.05", "38.90", "38.90"]
+        ],
+    }
+    (r,) = parse_twt49u(pure)
+    assert r["type"] == "rights_issue" and r["factor"] == pytest.approx(1.0)
+    assert not r["affects_shares"] and "含現金增資" in r["detail"]
+
+    mixed = {
+        "stat": "OK",
+        "fields": fields,
+        "data": [["115年09月02日", "2464", "盟立", "184.50", "182.30", "2.192145", "權息", "", "", "", "183.00"]],
+    }
+    (m,) = parse_twt49u(mixed)
+    assert m["type"] == "dividend_both" and m["factor"] == pytest.approx(183.0 / 184.5)
+
+
 # 以下三個報表的資料列取自 2026-11-12 對證交所網站的實際查詢結果
 TWTAUU = {
     "stat": "OK",
