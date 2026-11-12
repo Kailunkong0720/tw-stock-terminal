@@ -540,7 +540,7 @@ data/
 - [x] `git init`、`.gitignore`（排除 `.env`、`pipeline/data/`、`site/public/data/`、`node_modules`）
 - [x] 管線骨架：命令列進入點、SQLite + Alembic、限速且帶磁碟快取的 HTTP client、一個只輸出 `meta.json` 的 `export`、`publish`
 - [x] 網站骨架：Vite + React + TS、設計 token、字型、應用程式外框（頂部導覽、底部狀態列），讀取 `meta.json` 並顯示資料截止日
-- [ ] 經使用者同意後建立公開的 GitHub repo、push `main`、建立 `data` 分支、開啟 GitHub Pages
+- [x] 經使用者同意後建立公開的 GitHub repo、push `main`、建立 `data` 分支、開啟 GitHub Pages（<https://kailunkong0720.github.io/tw-stock-terminal/>）
 - [x] `ci.yml` 與 `deploy.yml`
 - [x] `CLAUDE.md`、`README.md`（含資料來源、免責聲明、授權、如何更新資料）
 - **驗收**：公開網址打得開，看到空的終端外框，底部狀態列顯示從 `data` 分支讀到的資料截止日；再執行一次 `export` + `publish` 後，網站自動重新部署並顯示新的時間
