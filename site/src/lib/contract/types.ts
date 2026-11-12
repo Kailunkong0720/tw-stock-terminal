@@ -4,6 +4,9 @@
  * tw-stock-terminal 靜態資料契約（由 pipeline 自動產生，請勿手改）
  */
 export interface Contract {
+  Moves?: Moves;
+  Events?: Events;
+  Timeline?: Timeline;
   Forecast?: Forecast;
   Backtest?: Backtest;
   Ranking?: Ranking;
@@ -15,6 +18,139 @@ export interface Contract {
   MarketFlows?: MarketFlows;
   IndustryFlows?: IndustryFlows;
   Overview?: Overview;
+}
+/**
+ * data/moves/{symbol}.json：異常波動日與可能相關的事件。
+ */
+export interface Moves {
+  symbol: string;
+  /**
+   * 只有追蹤池有事件歸因
+   */
+  tracked: boolean;
+  thresholds: {
+    [k: string]: number;
+  };
+  moves: MoveOut[];
+}
+export interface MoveOut {
+  date: string;
+  /**
+   * 還原後報酬
+   */
+  ret: number;
+  /**
+   * 與前一個有成交日之間隔了幾個交易日
+   */
+  gap: number;
+  /**
+   * 大盤貢獻
+   */
+  mkt: number | null;
+  /**
+   * 類股（相對大盤）貢獻
+   */
+  sector: number | null;
+  /**
+   * 前一晚費半貢獻
+   */
+  overnight: number | null;
+  /**
+   * 個股特有
+   */
+  idio: number | null;
+  z: number | null;
+  /**
+   * 成交量 ÷ 前 20 日均量
+   */
+  vol_ratio: number | null;
+  /**
+   * 當日外資買賣超（張）
+   */
+  foreign_lots: number | null;
+  /**
+   * 當日外資買賣超估算金額（百萬元）
+   */
+  foreign_value: number | null;
+  /**
+   * 當日外資買賣超金額的絕對值在該股歷史中的百分位（0–1）
+   */
+  foreign_rank: number | null;
+  candidates: Candidate[];
+}
+/**
+ * 某個異常波動日的候選事件（可能相關，不是原因）。
+ */
+export interface Candidate {
+  id: number;
+  /**
+   * 公告／發生時間（台北時間）
+   */
+  at: string;
+  /**
+   * 影響的交易日（盤後公告算下一個交易日）
+   */
+  trade_date: string;
+  level: "official" | "media" | "market";
+  type: string;
+  type_name: string;
+  /**
+   * +1 利多、−1 利空、0 無法判斷
+   */
+  direction: number;
+  title: string;
+  source: string;
+  url: string | null;
+  score: number;
+  /**
+   * relevance、prior、direction、proximity、credibility
+   */
+  components: {
+    [k: string]: number;
+  };
+}
+/**
+ * data/events/{symbol}.json：個股的重大訊息（不含例行公告）。
+ */
+export interface Events {
+  symbol: string;
+  events: EventOut[];
+}
+export interface EventOut {
+  id: number;
+  /**
+   * 公告／發生時間（台北時間）
+   */
+  at: string;
+  /**
+   * 影響的交易日（盤後公告算下一個交易日）
+   */
+  trade_date: string;
+  level: "official" | "media" | "market";
+  type: string;
+  type_name: string;
+  /**
+   * +1 利多、−1 利空、0 無法判斷
+   */
+  direction: number;
+  title: string;
+  source: string;
+  url: string | null;
+}
+/**
+ * data/events/timeline.json：市場事件與追蹤池最大的異常波動。
+ */
+export interface Timeline {
+  market: EventOut[];
+  moves: TimelineMove[];
+}
+export interface TimelineMove {
+  symbol: string;
+  name: string;
+  date: string;
+  ret: number;
+  idio: number | null;
+  top: Candidate | null;
 }
 /**
  * data/forecast/{symbol}.json：最新預測。價格為基準日的還原價（＝基準日的原始收盤尺度）。

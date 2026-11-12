@@ -118,9 +118,14 @@ class HttpClient:
         *,
         use_cache: bool = True,
         should_cache: Callable[[bytes], bool] | None = None,
+        json_body: dict[str, Any] | None = None,
     ) -> bytes:
+        """GET（或給了 json_body 時 POST）。快取鍵包含網址、參數與請求本文。"""
         host = urlsplit(url).netloc
-        path = self._cache_path(host, cache_key(url, params))
+        key_params = dict(params or {})
+        if json_body is not None:
+            key_params["__body__"] = json.dumps(json_body, sort_keys=True, ensure_ascii=False)
+        path = self._cache_path(host, cache_key(url, key_params))
         if use_cache:
             cached = self._cache_read(path)
             if cached is not None:
@@ -132,7 +137,10 @@ class HttpClient:
             self._throttle(host)
             self.stats["network"] += 1
             try:
-                resp = self._client.get(url, params=params)
+                if json_body is not None:
+                    resp = self._client.post(url, params=params, json=json_body)
+                else:
+                    resp = self._client.get(url, params=params)
             except httpx.TransportError as e:
                 last_error = e
                 log.warning("連線失敗 %s（第 %d 次）：%s", url, attempt, e)
@@ -160,6 +168,7 @@ class HttpClient:
         *,
         use_cache: bool = True,
         should_cache: Callable[[Any], bool] | None = None,
+        json_body: dict[str, Any] | None = None,
     ) -> Any:
         def _ok(body: bytes) -> bool:
             try:
@@ -168,7 +177,7 @@ class HttpClient:
                 return False
             return should_cache(data) if should_cache else True
 
-        body = self.get_bytes(url, params, use_cache=use_cache, should_cache=_ok)
+        body = self.get_bytes(url, params, use_cache=use_cache, should_cache=_ok, json_body=json_body)
         try:
             return json.loads(body)
         except ValueError as e:

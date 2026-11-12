@@ -92,6 +92,10 @@ def run_export(settings: Settings) -> ExportWriter:
     exporter = MarketExporter(get_engine(settings), writer)
     exporter.run()
     export_forecasts(get_engine(settings), writer, exporter.calendar)
+    if exporter.calendar:
+        from pipeline.export.events import export_events
+
+        export_events(get_engine(settings), writer, exporter.calendar[-1])
     # 資料截止日 = 這次輸出的日曆最後一天（回補程序可能同時在寫入更新的日子）
     as_of = exporter.calendar[-1] if exporter.calendar else None
     writer.write("meta.json", build_meta(settings, as_of))

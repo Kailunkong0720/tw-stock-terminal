@@ -5,6 +5,15 @@
   "x-contract-version": 1,
   "type": "object",
   "properties": {
+    "Moves": {
+      "$ref": "#/$defs/Moves"
+    },
+    "Events": {
+      "$ref": "#/$defs/Events"
+    },
+    "Timeline": {
+      "$ref": "#/$defs/Timeline"
+    },
     "Forecast": {
       "$ref": "#/$defs/Forecast"
     },
@@ -41,6 +50,415 @@
   },
   "additionalProperties": false,
   "$defs": {
+    "Candidate": {
+      "additionalProperties": false,
+      "description": "某個異常波動日的候選事件（可能相關，不是原因）。",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "at": {
+          "description": "公告／發生時間（台北時間）",
+          "format": "date-time",
+          "type": "string"
+        },
+        "trade_date": {
+          "description": "影響的交易日（盤後公告算下一個交易日）",
+          "format": "date",
+          "type": "string"
+        },
+        "level": {
+          "enum": [
+            "official",
+            "media",
+            "market"
+          ],
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "type_name": {
+          "type": "string"
+        },
+        "direction": {
+          "description": "+1 利多、−1 利空、0 無法判斷",
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "score": {
+          "type": "number"
+        },
+        "components": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "relevance、prior、direction、proximity、credibility",
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "at",
+        "trade_date",
+        "level",
+        "type",
+        "type_name",
+        "direction",
+        "title",
+        "source",
+        "url",
+        "score",
+        "components"
+      ],
+      "title": "Candidate",
+      "type": "object"
+    },
+    "MoveOut": {
+      "additionalProperties": false,
+      "properties": {
+        "date": {
+          "format": "date",
+          "type": "string"
+        },
+        "ret": {
+          "description": "還原後報酬",
+          "type": "number"
+        },
+        "gap": {
+          "description": "與前一個有成交日之間隔了幾個交易日",
+          "type": "integer"
+        },
+        "mkt": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "大盤貢獻"
+        },
+        "sector": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "類股（相對大盤）貢獻"
+        },
+        "overnight": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "前一晚費半貢獻"
+        },
+        "idio": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "個股特有"
+        },
+        "z": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "vol_ratio": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "成交量 ÷ 前 20 日均量"
+        },
+        "foreign_lots": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "當日外資買賣超（張）"
+        },
+        "foreign_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "當日外資買賣超估算金額（百萬元）"
+        },
+        "foreign_rank": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "當日外資買賣超金額的絕對值在該股歷史中的百分位（0–1）"
+        },
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/Candidate"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "date",
+        "ret",
+        "gap",
+        "mkt",
+        "sector",
+        "overnight",
+        "idio",
+        "z",
+        "vol_ratio",
+        "foreign_lots",
+        "foreign_value",
+        "foreign_rank",
+        "candidates"
+      ],
+      "title": "MoveOut",
+      "type": "object"
+    },
+    "Moves": {
+      "additionalProperties": false,
+      "description": "data/moves/{symbol}.json：異常波動日與可能相關的事件。",
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "tracked": {
+          "description": "只有追蹤池有事件歸因",
+          "type": "boolean"
+        },
+        "thresholds": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "type": "object"
+        },
+        "moves": {
+          "items": {
+            "$ref": "#/$defs/MoveOut"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "symbol",
+        "tracked",
+        "thresholds",
+        "moves"
+      ],
+      "title": "Moves",
+      "type": "object"
+    },
+    "EventOut": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "at": {
+          "description": "公告／發生時間（台北時間）",
+          "format": "date-time",
+          "type": "string"
+        },
+        "trade_date": {
+          "description": "影響的交易日（盤後公告算下一個交易日）",
+          "format": "date",
+          "type": "string"
+        },
+        "level": {
+          "enum": [
+            "official",
+            "media",
+            "market"
+          ],
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "type_name": {
+          "type": "string"
+        },
+        "direction": {
+          "description": "+1 利多、−1 利空、0 無法判斷",
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "at",
+        "trade_date",
+        "level",
+        "type",
+        "type_name",
+        "direction",
+        "title",
+        "source",
+        "url"
+      ],
+      "title": "EventOut",
+      "type": "object"
+    },
+    "Events": {
+      "additionalProperties": false,
+      "description": "data/events/{symbol}.json：個股的重大訊息（不含例行公告）。",
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/$defs/EventOut"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "symbol",
+        "events"
+      ],
+      "title": "Events",
+      "type": "object"
+    },
+    "TimelineMove": {
+      "additionalProperties": false,
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "date": {
+          "format": "date",
+          "type": "string"
+        },
+        "ret": {
+          "type": "number"
+        },
+        "idio": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "top": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Candidate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "symbol",
+        "name",
+        "date",
+        "ret",
+        "idio",
+        "top"
+      ],
+      "title": "TimelineMove",
+      "type": "object"
+    },
+    "Timeline": {
+      "additionalProperties": false,
+      "description": "data/events/timeline.json：市場事件與追蹤池最大的異常波動。",
+      "properties": {
+        "market": {
+          "items": {
+            "$ref": "#/$defs/EventOut"
+          },
+          "type": "array"
+        },
+        "moves": {
+          "items": {
+            "$ref": "#/$defs/TimelineMove"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "market",
+        "moves"
+      ],
+      "title": "Timeline",
+      "type": "object"
+    },
     "ForecastStepOut": {
       "additionalProperties": false,
       "properties": {

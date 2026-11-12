@@ -69,10 +69,18 @@ def _step_global(s: Settings) -> None:
     ingest_global(s)
 
 
+def _step_mops(s: Settings) -> None:
+    from pipeline.ingest.mops import ingest_mops
+
+    ingest_mops(s)
+
+
 def _step_moves(s: Settings) -> None:
+    from pipeline.events.attribution import attribute
     from pipeline.events.factor_model import compute_moves
 
     compute_moves(s)
+    attribute(s)
 
 
 # 會對外發請求的步驟，依序執行。
@@ -82,6 +90,7 @@ INGEST_STEPS: dict[str, Step] = {
     "company": _step_company,
     "flows": _step_flows,
     "global": _step_global,
+    "mops": _step_mops,
 }
 
 # 每個步驟執行時持有的鎖。「net」保證同一時間只有一個程序在對證交所發請求
@@ -93,6 +102,7 @@ STEP_LOCKS: dict[str, str] = {
     "company": "net",
     "flows": "net",
     "global": "net-yahoo",
+    "mops": "net-mops",
     "forecast": "cpu",
 }
 

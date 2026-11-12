@@ -262,8 +262,79 @@ class Ranking(_Model):
     backtest_dates: list[date]
 
 
+class EventOut(_Model):
+    id: int
+    at: datetime = Field(description="公告／發生時間（台北時間）")
+    trade_date: date = Field(description="影響的交易日（盤後公告算下一個交易日）")
+    level: Literal["official", "media", "market"]
+    type: str
+    type_name: str
+    direction: int = Field(description="+1 利多、−1 利空、0 無法判斷")
+    title: str
+    source: str
+    url: str | None
+
+
+class Candidate(EventOut):
+    """某個異常波動日的候選事件（可能相關，不是原因）。"""
+
+    score: float
+    components: dict[str, float] = Field(description="relevance、prior、direction、proximity、credibility")
+
+
+class MoveOut(_Model):
+    date: date
+    ret: float = Field(description="還原後報酬")
+    gap: int = Field(description="與前一個有成交日之間隔了幾個交易日")
+    mkt: float | None = Field(description="大盤貢獻")
+    sector: float | None = Field(description="類股（相對大盤）貢獻")
+    overnight: float | None = Field(description="前一晚費半貢獻")
+    idio: float | None = Field(description="個股特有")
+    z: float | None
+    vol_ratio: float | None = Field(description="成交量 ÷ 前 20 日均量")
+    foreign_lots: int | None = Field(description="當日外資買賣超（張）")
+    foreign_value: float | None = Field(description="當日外資買賣超估算金額（百萬元）")
+    foreign_rank: float | None = Field(description="當日外資買賣超金額的絕對值在該股歷史中的百分位（0–1）")
+    candidates: list[Candidate]
+
+
+class Moves(_Model):
+    """data/moves/{symbol}.json：異常波動日與可能相關的事件。"""
+
+    symbol: str
+    tracked: bool = Field(description="只有追蹤池有事件歸因")
+    thresholds: dict[str, float]
+    moves: list[MoveOut]
+
+
+class Events(_Model):
+    """data/events/{symbol}.json：個股的重大訊息（不含例行公告）。"""
+
+    symbol: str
+    events: list[EventOut]
+
+
+class TimelineMove(_Model):
+    symbol: str
+    name: str
+    date: date
+    ret: float
+    idio: float | None
+    top: Candidate | None
+
+
+class Timeline(_Model):
+    """data/events/timeline.json：市場事件與追蹤池最大的異常波動。"""
+
+    market: list[EventOut]
+    moves: list[TimelineMove]
+
+
 # 產生 JSON Schema / TypeScript 型別時要包含的頂層模型
 EXPORTED_MODELS: list[type[BaseModel]] = [
+    Moves,
+    Events,
+    Timeline,
     Forecast,
     Backtest,
     Ranking,
