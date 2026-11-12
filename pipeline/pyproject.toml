@@ -1,0 +1,35 @@
+[project]
+name = "pipeline"
+version = "0.1.0"
+description = "tw-stock-terminal 資料管線：抓取台股資料、計算、輸出靜態 JSON"
+requires-python = ">=3.11"
+dependencies = [
+    "alembic>=1.20.1",
+    "httpx>=0.28.1",
+    "pydantic>=2.14.3",
+    "sqlalchemy>=2.1.8",
+    "tzdata>=2026.6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.4",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+markers = [
+    "network: 需要連網的測試（預設略過，用 -m network 執行）",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["vendor", "migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["E501"]

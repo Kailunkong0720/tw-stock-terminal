@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Contract",
+  "description": "tw-stock-terminal 靜態資料契約（由 pipeline 自動產生，請勿手改）",
+  "type": "object",
+  "properties": {
+    "Meta": {
+      "$ref": "#/$defs/Meta"
+    }
+  },
+  "$defs": {
+    "SourceHealth": {
+      "additionalProperties": false,
+      "description": "一個資料來源的狀態。",
+      "properties": {
+        "id": {
+          "description": "來源代號，例如 twse_daily",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "description": "顯示名稱",
+          "title": "Name",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "partial",
+            "pending",
+            "error"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "last_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "該來源最新一筆資料的日期",
+          "title": "Last Date"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "status"
+      ],
+      "title": "SourceHealth",
+      "type": "object"
+    },
+    "Meta": {
+      "additionalProperties": false,
+      "description": "data/meta.json：網站啟動時第一個讀的檔案。",
+      "properties": {
+        "contract_version": {
+          "default": 1,
+          "title": "Contract Version",
+          "type": "integer"
+        },
+        "generated_at": {
+          "description": "輸出時間（含時區）",
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "data_as_of": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "資料截止日：最後一個有收盤資料的交易日",
+          "title": "Data As Of"
+        },
+        "coverage_start": {
+          "description": "資料起始日",
+          "format": "date",
+          "title": "Coverage Start",
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/SourceHealth"
+          },
+          "title": "Sources",
+          "type": "array"
+        },
+        "tracked": {
+          "description": "追蹤池代號",
+          "items": {
+            "type": "string"
+          },
+          "title": "Tracked",
+          "type": "array"
+        },
+        "build_notes": {
+          "description": "建置時做的取捨，顯示在「關於」頁",
+          "items": {
+            "type": "string"
+          },
+          "title": "Build Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "generated_at",
+        "data_as_of",
+        "coverage_start"
+      ],
+      "title": "Meta",
+      "type": "object"
+    }
+  }
+}

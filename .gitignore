@@ -1,0 +1,30 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# local work state (heartbeat, progress log, locks)
+.work/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# pipeline: local DB, HTTP cache, model weights
+pipeline/data/
+pipeline/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# site
+site/node_modules/
+site/dist/
+site/public/data/
+*.tsbuildinfo
+
+# misc
+*.log
+.DS_Store
+Thumbs.db
