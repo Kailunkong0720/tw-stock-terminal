@@ -2,6 +2,7 @@
 
 build     從頭跑完整個管線（可中斷續跑；已完成的部分自動跳過）
 refresh   只補上次之後的新資料
+ingest    只執行指定的抓取步驟，例如 ingest daily
 export    把資料庫輸出成 site/public/data/ 下的 JSON
 publish   把輸出的 JSON 推到 data 分支並觸發部署
 status    顯示正在執行的步驟與資料狀態
@@ -38,8 +39,42 @@ def _step_export(s: Settings) -> None:
     run_export(s)
 
 
+def _step_daily(s: Settings) -> None:
+    from pipeline.ingest.twse_daily import ingest_daily
+
+    ingest_daily(s)
+
+
+def _step_actions(s: Settings) -> None:
+    from pipeline.ingest.corporate_actions import ingest_corporate_actions
+
+    ingest_corporate_actions(s)
+
+
+def _step_company(s: Settings) -> None:
+    from pipeline.ingest.company import ingest_company
+
+    ingest_company(s)
+
+
+def _step_flows(s: Settings) -> None:
+    from pipeline.ingest.institutional import ingest_institutional
+
+    ingest_institutional(s)
+
+
+# 會對外發請求的步驟，依序執行。執行時持有「net」鎖，保證同一時間只有一個程序在對證交所發請求
+# （兩個程序各自限速 3 秒，合起來就變成 1.5 秒，等於違反限速）。
+INGEST_STEPS: dict[str, Step] = {
+    "daily": _step_daily,
+    "actions": _step_actions,
+    "company": _step_company,
+    "flows": _step_flows,
+}
+
 BUILD_STEPS: list[tuple[str, Step]] = [
     ("migrate", _step_migrate),
+    *INGEST_STEPS.items(),
     ("export", _step_export),
 ]
 REFRESH_STEPS: list[tuple[str, Step]] = BUILD_STEPS
@@ -62,7 +97,7 @@ def _setup_logging(settings: Settings, verbose: bool) -> None:
 
 
 def _run_steps(settings: Settings, name: str, steps: list[tuple[str, Step]]) -> None:
-    with step_lock(settings.run_dir, name):
+    with step_lock(settings.run_dir, name), step_lock(settings.run_dir, "net"):
         for step_name, fn in steps:
             log.info("── %s", step_name)
             fn(settings)
@@ -119,6 +154,25 @@ def cmd_status(settings: Settings) -> None:
         print("  （尚未輸出）")
 
 
+def cmd_check(settings: Settings) -> int:
+    """資料品質不變量：還原後日報酬超過 ±10.5% 的普通股（PLAN.md 3.2）。"""
+    from pipeline.analytics.checks import find_violations
+    from pipeline.core.config import COVERAGE_START
+    from pipeline.core.db import get_engine
+
+    vs = find_violations(get_engine(settings), COVERAGE_START)
+    unexplained = [v for v in vs if v.reason is None]
+    explained = [v for v in vs if v.reason is not None]
+    print(f"還原後日報酬超過 ±10.5%：共 {len(vs)} 筆；已知例外 {len(explained)} 筆；無法解釋 {len(unexplained)} 筆")
+    for v in explained[:20]:
+        print(f"  [例外] {v.symbol} {v.prev_date}→{v.date} 還原 {v.ret:+.1%}（原始 {v.raw_ret:+.1%}）：{v.reason}")
+    if len(explained) > 20:
+        print(f"  …另有 {len(explained) - 20} 筆已知例外")
+    for v in unexplained:
+        print(f"  [待查] {v.symbol} {v.prev_date}→{v.date} 還原 {v.ret:+.1%}（原始 {v.raw_ret:+.1%}）")
+    return 1 if unexplained else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     # Windows 的主控台預設編碼可能不是 UTF-8，中文輸出會出錯
     for stream in (sys.stdout, sys.stderr):
@@ -134,7 +188,10 @@ def main(argv: list[str] | None = None) -> int:
     p_pub = sub.add_parser("publish", help="推送 data 分支並觸發部署")
     p_pub.add_argument("--no-push", action="store_true", help="只在本機建立 data 分支的 commit")
     p_pub.add_argument("--no-deploy", action="store_true", help="推送後不觸發部署")
+    p_ing = sub.add_parser("ingest", help="只執行指定的抓取步驟（可續跑）")
+    p_ing.add_argument("steps", nargs="+", choices=sorted(INGEST_STEPS), help="步驟名稱")
     sub.add_parser("status", help="顯示狀態")
+    sub.add_parser("check", help="資料品質檢查（還原後漲跌幅不變量）")
     sub.add_parser("migrate", help="升級資料庫結構")
     p_schema = sub.add_parser("schema", help="產生前端用的 JSON Schema")
     p_schema.add_argument("--out", type=Path, default=REPO_ROOT / "site" / "src" / "lib" / "contract" / "schema.json")
@@ -148,6 +205,9 @@ def main(argv: list[str] | None = None) -> int:
             _run_steps(settings, "build", BUILD_STEPS)
         elif args.cmd == "refresh":
             _run_steps(settings, "refresh", REFRESH_STEPS)
+        elif args.cmd == "ingest":
+            _step_migrate(settings)
+            _run_steps(settings, "ingest", [(n, INGEST_STEPS[n]) for n in args.steps])
         elif args.cmd == "export":
             with step_lock(settings.run_dir, "export"):
                 _step_export(settings)
@@ -157,6 +217,8 @@ def main(argv: list[str] | None = None) -> int:
             publish(settings, push=not args.no_push, trigger_deploy=not args.no_deploy)
         elif args.cmd == "status":
             cmd_status(settings)
+        elif args.cmd == "check":
+            return cmd_check(settings)
         elif args.cmd == "migrate":
             _step_migrate(settings)
         elif args.cmd == "schema":

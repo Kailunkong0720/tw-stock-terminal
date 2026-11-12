@@ -2,5 +2,24 @@
 
 from pipeline.models.base import Base
 from pipeline.models.ingest import IngestLog
+from pipeline.models.market import (
+    CorporateAction,
+    DailyBar,
+    ForeignHolding,
+    IndexBar,
+    InstitutionalFlow,
+    MarketFlow,
+    Security,
+)
 
-__all__ = ["Base", "IngestLog"]
+__all__ = [
+    "Base",
+    "CorporateAction",
+    "DailyBar",
+    "ForeignHolding",
+    "IndexBar",
+    "IngestLog",
+    "InstitutionalFlow",
+    "MarketFlow",
+    "Security",
+]

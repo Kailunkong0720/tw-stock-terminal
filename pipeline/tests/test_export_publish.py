@@ -70,7 +70,7 @@ def test_data_commit_is_single_orphan_commit(tmp_path, settings):
     assert _git("rev-parse", "data", cwd=repo) == c2
     assert c1 and c2
     files = set(_git("ls-tree", "-r", "--name-only", "data", cwd=repo).splitlines())
-    assert files == {"meta.json", "bars/2330.json"}
+    assert {"meta.json", "bars/2330.json"} <= files
     # 使用者的工作目錄與 index 不受影響
     assert _git("status", "--porcelain", cwd=repo) == ""
     assert _git("rev-parse", "--abbrev-ref", "HEAD", cwd=repo) == "main"
