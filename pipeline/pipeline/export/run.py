@@ -76,4 +76,5 @@ def json_schema() -> dict:
 
 def dump_schema(path) -> None:  # noqa: ANN001
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(json_schema(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    # newline="\n"：Windows 上不轉成 CRLF，否則與 CI（Linux）產生的檔案不一致
+    path.write_text(json.dumps(json_schema(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")

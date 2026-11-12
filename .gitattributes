@@ -1,0 +1,9 @@
+# 一律以 LF 存放，避免 Windows 與 CI（Linux）產生的檔案不一致
+* text=auto eol=lf
+
+*.woff2 binary
+*.woff binary
+*.png binary
+*.jpg binary
+*.gz binary
+*.sqlite binary
