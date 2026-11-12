@@ -72,9 +72,17 @@ INGEST_STEPS: dict[str, Step] = {
     "flows": _step_flows,
 }
 
+
+def _step_forecast(s: Settings) -> None:
+    from pipeline.forecast.kronos_runner import run_latest
+
+    run_latest(s)
+
+
 BUILD_STEPS: list[tuple[str, Step]] = [
     ("migrate", _step_migrate),
     *INGEST_STEPS.items(),
+    ("forecast", _step_forecast),
     ("export", _step_export),
 ]
 REFRESH_STEPS: list[tuple[str, Step]] = BUILD_STEPS
@@ -94,6 +102,8 @@ def _setup_logging(settings: Settings, verbose: bool) -> None:
     root.handlers[:] = [console, file]
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("alembic").setLevel(logging.WARNING)
+    for noisy in ("httpx2", "huggingface_hub", "filelock"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
 def _run_steps(settings: Settings, name: str, steps: list[tuple[str, Step]]) -> None:
@@ -190,6 +200,10 @@ def main(argv: list[str] | None = None) -> int:
     p_pub.add_argument("--no-deploy", action="store_true", help="推送後不觸發部署")
     p_ing = sub.add_parser("ingest", help="只執行指定的抓取步驟（可續跑）")
     p_ing.add_argument("steps", nargs="+", choices=sorted(INGEST_STEPS), help="步驟名稱")
+    p_fc = sub.add_parser("forecast", help="Kronos 最新預測（追蹤池）")
+    p_fc.add_argument("symbols", nargs="*", help="只跑指定代號（預設：追蹤池）")
+    p_bt = sub.add_parser("backtest", help="Kronos 滾動回測（可續跑，耗時數小時）")
+    p_bt.add_argument("symbols", nargs="*", help="只跑指定代號（預設：追蹤池）")
     sub.add_parser("status", help="顯示狀態")
     sub.add_parser("check", help="資料品質檢查（還原後漲跌幅不變量）")
     sub.add_parser("migrate", help="升級資料庫結構")
@@ -215,6 +229,14 @@ def main(argv: list[str] | None = None) -> int:
             from pipeline.publish import publish
 
             publish(settings, push=not args.no_push, trigger_deploy=not args.no_deploy)
+        elif args.cmd in ("forecast", "backtest"):
+            from pipeline.core.db import migrate
+            from pipeline.forecast.kronos_runner import run_backtest, run_latest
+
+            migrate(settings)
+            # 模型推論吃 CPU，不碰網路（權重第一次下載後就有快取）：用 cpu 鎖，可與 net 回補同時進行
+            with step_lock(settings.run_dir, "cpu"):
+                (run_latest if args.cmd == "forecast" else run_backtest)(settings, args.symbols or None)
         elif args.cmd == "status":
             cmd_status(settings)
         elif args.cmd == "check":
