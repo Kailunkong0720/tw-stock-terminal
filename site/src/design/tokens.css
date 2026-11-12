@@ -24,6 +24,11 @@
   --flat: #8b9490;
   --warn: #e8a23d;
 
+  /* 圖表上的輔助線（均線等），刻意用低彩度，不和漲跌色、強調色搶 */
+  --series-1: #c9cecb;
+  --series-2: #d6a24a;
+  --series-3: #7d93c4;
+
   --radius-panel: 8px;
   --radius-control: 6px;
 
@@ -55,6 +60,9 @@
   --color-down: var(--down);
   --color-flat: var(--flat);
   --color-warn: var(--warn);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
   --radius-panel: var(--radius-panel);
   --radius-control: var(--radius-control);
   --font-sans: var(--font-sans);

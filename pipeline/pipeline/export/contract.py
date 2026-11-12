@@ -62,6 +62,8 @@ class SecurityInfo(_Model):
     first: date = Field(description="資料期間內第一個交易日")
     last: date = Field(description="資料期間內最後一個交易日")
     active: bool = Field(description="資料截止日仍有交易（未下市）")
+    close: float | None = Field(description="最後一個有成交日的收盤價（原始價）")
+    change_pct: float | None = Field(description="資料截止日的漲跌幅（%）；當日無成交或無法判斷時為 null")
 
 
 class Securities(_Model):

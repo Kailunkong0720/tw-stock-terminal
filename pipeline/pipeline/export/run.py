@@ -38,12 +38,13 @@ BUILD_NOTES = [
 ]
 
 
-def build_meta(settings: Settings) -> Meta:
+def build_meta(settings: Settings, as_of: date | None = None) -> Meta:
     from pipeline.export.market import source_status
 
     engine = get_engine(settings)
     with session_scope(settings) as s:
-        as_of = s.execute(select(func.max(DailyBar.date))).scalar_one_or_none()
+        if as_of is None:
+            as_of = s.execute(select(func.max(DailyBar.date))).scalar_one_or_none()
         tracked = sorted(s.execute(select(Security.symbol).where(Security.tracked.is_(True))).scalars())
 
     status = source_status(engine) if as_of else {}
@@ -81,8 +82,12 @@ def run_export(settings: Settings) -> ExportWriter:
 
     migrate(settings)
     writer = ExportWriter(settings.export_dir)
-    MarketExporter(get_engine(settings), writer).run()
-    writer.write("meta.json", build_meta(settings))
+    writer.reset()
+    exporter = MarketExporter(get_engine(settings), writer)
+    exporter.run()
+    # 資料截止日 = 這次輸出的日曆最後一天（回補程序可能同時在寫入更新的日子）
+    as_of = exporter.calendar[-1] if exporter.calendar else None
+    writer.write("meta.json", build_meta(settings, as_of))
     total = writer.check_budget()
     log.info("輸出 %d 個檔案到 %s，總大小 %.1f MB", writer.file_count(), settings.export_dir, total / 1e6)
     return writer

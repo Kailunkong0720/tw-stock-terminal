@@ -213,6 +213,28 @@
         "active": {
           "description": "資料截止日仍有交易（未下市）",
           "type": "boolean"
+        },
+        "close": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "最後一個有成交日的收盤價（原始價）"
+        },
+        "change_pct": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "資料截止日的漲跌幅（%）；當日無成交或無法判斷時為 null"
         }
       },
       "required": [
@@ -223,7 +245,9 @@
         "tracked",
         "first",
         "last",
-        "active"
+        "active",
+        "close",
+        "change_pct"
       ],
       "title": "SecurityInfo",
       "type": "object"

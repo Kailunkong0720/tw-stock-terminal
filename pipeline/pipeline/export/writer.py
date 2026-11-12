@@ -20,6 +20,15 @@ class ExportWriter:
     root: Path
     written: dict[str, int] = field(default_factory=dict)
 
+    def reset(self) -> int:
+        """刪除上次輸出的 JSON（輸出目錄完全由 export 擁有），避免已下市標的的舊檔殘留。"""
+        n = 0
+        if self.root.exists():
+            for p in self.root.rglob("*.json"):
+                p.unlink()
+                n += 1
+        return n
+
     def write(self, rel_path: str, model: BaseModel) -> Path:
         path = self.root / rel_path
         path.parent.mkdir(parents=True, exist_ok=True)

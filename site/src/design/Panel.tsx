@@ -14,8 +14,10 @@ export function Panel({ title, actions, children, className = '', bodyClassName 
     <section className={`flex min-h-0 min-w-0 flex-col rounded-panel border border-line bg-panel ${className}`}>
       {(title || actions) && (
         <header className="flex h-9 shrink-0 items-center justify-between gap-3 border-b border-line px-3">
-          <h2 className="truncate text-xs font-medium text-text-2">{title}</h2>
-          {actions && <div className="flex items-center gap-1">{actions}</div>}
+          <h2 className="shrink-0 truncate text-xs font-medium text-text-2">{title}</h2>
+          {actions && (
+            <div className="-mr-1 flex min-w-0 items-center gap-1 overflow-x-auto pr-1 [scrollbar-width:none]">{actions}</div>
+          )}
         </header>
       )}
       <div className={`min-h-0 flex-1 ${bodyClassName}`}>{children}</div>

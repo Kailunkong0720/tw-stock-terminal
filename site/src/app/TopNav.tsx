@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 
 import { Segmented } from '../design/Segmented'
 import { setUpDown, useUpDown } from '../lib/prefs'
+import { useView } from '../lib/store'
 
 const NAV = [
   { to: '/', label: '市場' },
@@ -47,7 +48,16 @@ export function TopNav() {
         ))}
       </nav>
 
-      <div className="ml-auto hidden shrink-0 items-center gap-2 sm:flex">
+      <button
+        type="button"
+        onClick={() => useView.getState().setSearchOpen(true)}
+        className="ml-auto flex h-7 shrink-0 items-center gap-6 rounded-control border border-line bg-raised px-2.5 text-xs text-text-3 transition-colors hover:border-line-strong hover:text-text-2"
+      >
+        <span>搜尋代號或名稱</span>
+        <kbd className="num text-2xs">Ctrl K</kbd>
+      </button>
+
+      <div className="hidden shrink-0 items-center gap-2 lg:flex">
         <span className="text-2xs text-text-3">漲跌配色</span>
         <Segmented
           size="xs"

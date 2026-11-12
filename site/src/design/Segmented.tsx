@@ -16,7 +16,7 @@ export function Segmented<T extends string>({
 }) {
   const pad = size === 'xs' ? 'h-6 px-2 text-2xs' : 'h-7 px-2.5 text-xs'
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-control bg-raised p-0.5">
+    <div role="radiogroup" aria-label={label} className="inline-flex shrink-0 whitespace-nowrap rounded-control bg-raised p-0.5">
       {options.map((o) => {
         const active = o.value === value
         return (

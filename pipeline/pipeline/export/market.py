@@ -67,33 +67,65 @@ class MarketExporter:
         return self.calendar
 
     def _align(self, dates: list[date], values: list, fill) -> tuple[int, list]:  # noqa: ANN001
-        """把 (日期, 值) 對齊到日曆區間 [第一天, 最後一天]，缺的日子補 fill。"""
-        start, end = self.idx[dates[0]], self.idx[dates[-1]]
+        """把 (日期, 值) 對齊到日曆區間 [第一天, 最後一天]，缺的日子補 fill。
+
+        日曆之外的日期（例如回補程序在輸出途中新寫入的日子）略過，確保整份輸出是同一個快照。
+        """
+        pairs = [(d, v) for d, v in zip(dates, values, strict=True) if d in self.idx]
+        if not pairs:
+            return 0, []
+        start, end = self.idx[pairs[0][0]], self.idx[pairs[-1][0]]
         out = [fill] * (end - start + 1)
-        for d, v in zip(dates, values, strict=True):
+        for d, v in pairs:
             out[self.idx[d] - start] = v
         return start, out
 
     # ── 證券清單 ────────────────────────────────────────────────────────
     def export_securities(self) -> pd.DataFrame:
+        # 起訖日期直接由日線計算（security.first_bar 只在回補結束時更新，回補途中可能是空的）
         secs = self.q(
-            "SELECT symbol, name, kind, industry, tracked, first_bar, last_bar FROM security "
-            "WHERE kind IN ('stock', 'etf') AND first_bar IS NOT NULL ORDER BY symbol"
+            "SELECT s.symbol, s.name, s.kind, s.industry, s.tracked, r.first_bar, r.last_bar FROM security s "
+            "JOIN (SELECT symbol, MIN(date) AS first_bar, MAX(date) AS last_bar FROM daily_bar "
+            "WHERE date <= :end GROUP BY symbol) r "
+            "ON r.symbol = s.symbol WHERE s.kind IN ('stock', 'etf') ORDER BY s.symbol",
+            end=self.calendar[-1].isoformat(),
         )
         last_day = self.calendar[-1]
-        items = [
-            SecurityInfo(
-                symbol=r.symbol,
-                name=r.name,
-                kind=r.kind,
-                industry=r.industry,
-                tracked=bool(r.tracked),
-                first=pd.Timestamp(r.first_bar).date(),
-                last=pd.Timestamp(r.last_bar).date(),
-                active=pd.Timestamp(r.last_bar).date() == last_day,
+        # 每檔最後一個有成交日的收盤，與截止日的漲跌（漲跌價差 ÷ 前收）
+        last = self.q(
+            "SELECT b.symbol, b.date, b.close, b.change FROM daily_bar b JOIN ("
+            "  SELECT symbol, MAX(date) AS d FROM daily_bar WHERE close IS NOT NULL AND date <= :end GROUP BY symbol"
+            ") m ON m.symbol = b.symbol AND m.d = b.date",
+            end=last_day.isoformat(),
+        ).set_index("symbol")
+
+        def last_quote(sym: str) -> tuple[float | None, float | None]:
+            if sym not in last.index:
+                return None, None
+            r = last.loc[sym]
+            close, chg = float(r["close"]), r["change"]
+            on_last_day = pd.Timestamp(r["date"]).date() == last_day
+            if not on_last_day or chg is None or pd.isna(chg) or close - chg <= 0:
+                return close, None
+            return close, _num(chg / (close - chg) * 100)
+
+        items = []
+        for r in secs.itertuples():
+            close, pct = last_quote(r.symbol)
+            items.append(
+                SecurityInfo(
+                    symbol=r.symbol,
+                    name=r.name,
+                    kind=r.kind,
+                    industry=r.industry,
+                    tracked=bool(r.tracked),
+                    first=pd.Timestamp(r.first_bar).date(),
+                    last=pd.Timestamp(r.last_bar).date(),
+                    active=pd.Timestamp(r.last_bar).date() == last_day,
+                    close=close,
+                    change_pct=pct,
+                )
             )
-            for r in secs.itertuples()
-        ]
         self.w.write("securities.json", Securities(items=items))
         return secs
 
@@ -227,6 +259,7 @@ class MarketExporter:
         idx = self.q("SELECT index_id, date, close, change_pct FROM index_bar ORDER BY date")
         idx["date"] = pd.to_datetime(idx["date"]).dt.date
         last = self.calendar[-1]
+        idx = idx[idx["date"] <= last]
 
         t = idx[idx.index_id == TAIEX]
         tdates = list(t["date"])

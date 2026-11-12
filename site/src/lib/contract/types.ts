@@ -98,6 +98,14 @@ export interface SecurityInfo {
    * 資料截止日仍有交易（未下市）
    */
   active: boolean;
+  /**
+   * 最後一個有成交日的收盤價（原始價）
+   */
+  close: number | null;
+  /**
+   * 資料截止日的漲跌幅（%）；當日無成交或無法判斷時為 null
+   */
+  change_pct: number | null;
 }
 /**
  * data/bars/{symbol}.json：原始（未還原）日線。

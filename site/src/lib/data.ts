@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import schema from './contract/schema.json'
-import type { Meta } from './contract/types'
+import type { Bars, Calendar, Flows, MarketFlows, Meta, Overview, Securities } from './contract/types'
 
 /** 網站預期的資料契約版本（由 pipeline 產生的 schema 決定，單一來源）。 */
 export const CONTRACT_VERSION = (schema as { 'x-contract-version': number })['x-contract-version']
@@ -49,3 +49,26 @@ export function useMeta() {
     retry: 1,
   })
 }
+
+/** 以 meta 的產生時間當版本，換資料後瀏覽器快取不會拿到舊檔。 */
+function useVersion(): string | undefined {
+  return useMeta().data?.generated_at
+}
+
+function useDataFile<T>(path: string | null, key: unknown[]) {
+  const v = useVersion()
+  return useQuery({
+    queryKey: [...key, v],
+    queryFn: () => loadData<T>(`${path}?v=${encodeURIComponent(v ?? '')}`),
+    enabled: Boolean(path && v),
+    staleTime: Infinity,
+    retry: (n, err) => !(err instanceof DataError && err.kind === 'not-found') && n < 1,
+  })
+}
+
+export const useCalendar = () => useDataFile<Calendar>('calendar.json', ['calendar'])
+export const useSecurities = () => useDataFile<Securities>('securities.json', ['securities'])
+export const useOverview = () => useDataFile<Overview>('market/overview.json', ['overview'])
+export const useMarketFlows = () => useDataFile<MarketFlows>('flows/market.json', ['market-flows'])
+export const useBars = (symbol: string) => useDataFile<Bars>(`bars/${symbol}.json`, ['bars', symbol])
+export const useFlows = (symbol: string) => useDataFile<Flows>(`flows/${symbol}.json`, ['flows', symbol])

@@ -1,6 +1,7 @@
 import { Outlet } from '@tanstack/react-router'
 
 import { CONTRACT_VERSION, useMeta } from '../lib/data'
+import { SearchDialog, useGlobalShortcuts } from './SearchDialog'
 import { StatusBar } from './StatusBar'
 import { TopNav } from './TopNav'
 
@@ -15,6 +16,7 @@ function ContractBanner() {
 }
 
 export function AppShell() {
+  useGlobalShortcuts()
   return (
     <div className="flex h-full flex-col">
       <TopNav />
@@ -23,6 +25,7 @@ export function AppShell() {
         <Outlet />
       </main>
       <StatusBar />
+      <SearchDialog />
     </div>
   )
 }
