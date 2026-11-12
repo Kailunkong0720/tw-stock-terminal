@@ -1,0 +1,67 @@
+# 打包網站並部署到 GitHub Pages。這個工作流程只做打包，不抓資料、不跑模型。
+#
+# 資料放在 data 分支（只有 JSON，由本機的 `python -m pipeline publish` 推送）。
+# data 分支上沒有工作流程檔，push 到 data 不會觸發任何東西，所以 publish 推送後會用
+# `gh workflow run deploy.yml --ref main` 手動觸發這裡。
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: 打包
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 取出 data 分支的資料
+        run: |
+          mkdir -p site/public/data
+          if git ls-remote --exit-code --heads origin data > /dev/null; then
+            git fetch --depth=1 origin data
+            git archive FETCH_HEAD | tar -x -C site/public/data
+            echo "資料檔：$(find site/public/data -type f | wc -l) 個，$(du -sh site/public/data | cut -f1)"
+          else
+            echo "::warning::data 分支不存在，這次部署不含資料"
+          fi
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.18.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: pnpm
+          cache-dependency-path: site/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: site
+      - run: pnpm build
+        working-directory: site
+
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/dist
+
+  deploy:
+    name: 部署
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -39,4 +39,32 @@
 
 ## 常用指令
 
-（Phase 0 完成時補上）
+管線（在 `pipeline/` 下）：
+
+```powershell
+uv run python -m pipeline status      # 執行中的步驟、資料庫各表列數、輸出狀態
+uv run python -m pipeline build       # 完整建置（可續跑）
+uv run python -m pipeline refresh     # 只補新資料
+uv run python -m pipeline export      # 輸出 JSON 到 site/public/data/
+uv run python -m pipeline publish     # 推 data 分支 + 觸發部署（--no-push 只建本機 commit）
+uv run python -m pipeline schema      # 改了 export/contract.py 之後重新產生 schema
+uv run pytest                         # 測試（-m network 執行需要連網的測試）
+uv run ruff check . ; uv run ruff format .
+```
+
+網站（在 `site/` 下）：
+
+```powershell
+pnpm dev          # 開發伺服器（或用 Browser pane 的 launch 設定「site」，port 5173）
+pnpm gen:types    # schema.json → src/lib/contract/types.ts
+pnpm build        # 型別檢查 + 打包
+```
+
+## 慣例與已知的坑
+
+- **Windows 系統編碼是 cp1252**：讀寫檔案一律明確指定 `encoding="utf-8"`；`alembic.ini` 只能放 ASCII；PowerShell 把中文用管線傳給 git 會變亂碼，commit 訊息先寫成 UTF-8 檔再 `git commit -F 檔案`
+- uv 的 Python 3.11 版本捷徑在這台機器上建不起來；`.venv` 是用完整路徑建立的（`uv venv --python %APPDATA%\uv\python\cpython-3.11.18-windows-x86_64-none\python.exe`），`.python-version` 仍寫 3.11 給 CI 用
+- Node 26 不內建 corepack，pnpm 是用 `npm install -g pnpm` 裝的
+- 資料契約的單一來源是 `pipeline/pipeline/export/contract.py`。改了之後要跑 `schema` 和 `pnpm gen:types`，CI 會檢查兩者一致
+- push 到 `data` 分支不會觸發部署（該分支沒有工作流程檔），`publish` 會用 `gh workflow run deploy.yml --ref main` 觸發
+- 中文字型用 Noto Sans TC（IBM Plex Sans TC 沒有 npm 套件），拉丁字與數字用 IBM Plex Sans／Mono

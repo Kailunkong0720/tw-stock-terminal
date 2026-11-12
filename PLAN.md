@@ -155,7 +155,7 @@ D:\000dashboard-金融\
 
 **`data` 分支**：一個獨立的分支，只放 JSON，永遠只有一個 commit。`publish` 每次都重新建立這個 commit 並強制推送，所以更新多少次都不會累積歷史。這個分支不要合併進 `main`。
 
-**部署**（`deploy.yml`）：`main` 或 `data` 任一有新的 push 就觸發。步驟是取出 `main` 的程式碼、把 `data` 分支的內容放到 `site/public/data/`、打包、用 Pages 的 artifact 方式部署。Actions 在這裡只做打包，不抓資料也不跑模型。
+**部署**（`deploy.yml`）：`main` 有新的 push，或 `publish` 推送 `data` 分支後以 `gh workflow run deploy.yml --ref main` 觸發（`data` 分支上沒有工作流程檔，push 到它本身不會觸發任何東西）。步驟是取出 `main` 的程式碼、把 `data` 分支的內容放到 `site/public/data/`、打包、用 Pages 的 artifact 方式部署。Actions 在這裡只做打包，不抓資料也不跑模型。
 
 **GitHub Pages 的限制**（已驗證，官方文件）：發布的網站上限 1 GB，每月流量軟上限 100 GB，單次部署逾時 10 分鐘。
 
@@ -444,7 +444,7 @@ GET https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20201102&type=ALLB
 
 **關於配色衝突**：參考圖是加密貨幣介面，綠色同時是品牌色和「上漲」。台股慣例是紅漲綠跌，所以 `--accent` 與 `--up`/`--down` 必須是分開的 token：強調色只出現在**可互動的介面元件**上（分頁、按鈕、焦點框），漲跌色只出現在**數字與 K 線**上。設定裡提供切換成綠漲紅跌，切換時只交換 `--up` 和 `--down` 的值。
 
-**字型**：中文與拉丁字用 IBM Plex Sans TC，所有數字、代號、價格用 IBM Plex Mono 並開啟 `font-variant-numeric: tabular-nums`。字型檔隨網站一起部署（中文字型要做子集化，否則檔案太大），不從第三方 CDN 載入。
+**字型**：拉丁字用 IBM Plex Sans，中文用 Noto Sans TC（原訂的 IBM Plex Sans TC 沒有 npm 套件；2026-11-12 改定），所有數字、代號、價格用 IBM Plex Mono 並開啟 `font-variant-numeric: tabular-nums`（工具類別 `.num`）。字型檔隨網站一起部署，中文字型按 unicode 範圍切片、瀏覽器只下載用到的部分，不從第三方 CDN 載入。
 
 **台股格式化規則**（集中寫在 `lib/format.ts`）：成交量單位是「張」（1 張 = 1,000 股）；金額用「億」「萬」；價格小數位依股價級距的升降單位；漲跌一律帶正負號與顏色，平盤顯示灰色。
 
@@ -536,13 +536,13 @@ data/
 每個階段是一個獨立的工作段落。驗收條件全部通過才算完成。
 
 ### Phase 0 — 工具鏈、repo 與部署管道
-- [ ] 請使用者安裝 Node.js LTS、uv、GitHub CLI（提供 winget 指令，由使用者執行）
-- [ ] `git init`、`.gitignore`（排除 `.env`、`pipeline/data/`、`site/public/data/`、`node_modules`）
-- [ ] 管線骨架：命令列進入點、SQLite + Alembic、限速且帶磁碟快取的 HTTP client、一個只輸出 `meta.json` 的 `export`、`publish`
-- [ ] 網站骨架：Vite + React + TS、設計 token、字型、應用程式外框（頂部導覽、底部狀態列），讀取 `meta.json` 並顯示資料截止日
+- [x] 請使用者安裝 Node.js LTS、uv、GitHub CLI（提供 winget 指令，由使用者執行）
+- [x] `git init`、`.gitignore`（排除 `.env`、`pipeline/data/`、`site/public/data/`、`node_modules`）
+- [x] 管線骨架：命令列進入點、SQLite + Alembic、限速且帶磁碟快取的 HTTP client、一個只輸出 `meta.json` 的 `export`、`publish`
+- [x] 網站骨架：Vite + React + TS、設計 token、字型、應用程式外框（頂部導覽、底部狀態列），讀取 `meta.json` 並顯示資料截止日
 - [ ] 經使用者同意後建立公開的 GitHub repo、push `main`、建立 `data` 分支、開啟 GitHub Pages
-- [ ] `ci.yml` 與 `deploy.yml`
-- [ ] `CLAUDE.md`、`README.md`（含資料來源、免責聲明、授權、如何更新資料）
+- [x] `ci.yml` 與 `deploy.yml`
+- [x] `CLAUDE.md`、`README.md`（含資料來源、免責聲明、授權、如何更新資料）
 - **驗收**：公開網址打得開，看到空的終端外框，底部狀態列顯示從 `data` 分支讀到的資料截止日；再執行一次 `export` + `publish` 後，網站自動重新部署並顯示新的時間
 
 ### Phase 1 — 資料地基
