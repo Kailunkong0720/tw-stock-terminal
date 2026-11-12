@@ -5,6 +5,15 @@
   "x-contract-version": 1,
   "type": "object",
   "properties": {
+    "Forecast": {
+      "$ref": "#/$defs/Forecast"
+    },
+    "Backtest": {
+      "$ref": "#/$defs/Backtest"
+    },
+    "Ranking": {
+      "$ref": "#/$defs/Ranking"
+    },
     "Meta": {
       "$ref": "#/$defs/Meta"
     },
@@ -32,6 +41,467 @@
   },
   "additionalProperties": false,
   "$defs": {
+    "ForecastStepOut": {
+      "additionalProperties": false,
+      "properties": {
+        "step": {
+          "description": "基準日之後第幾個交易日（1 起算）",
+          "type": "integer"
+        },
+        "p05": {
+          "type": "number"
+        },
+        "p25": {
+          "type": "number"
+        },
+        "p50": {
+          "type": "number"
+        },
+        "p75": {
+          "type": "number"
+        },
+        "p95": {
+          "type": "number"
+        },
+        "up_prob": {
+          "description": "收盤高於基準日收盤的路徑比例",
+          "type": "number"
+        }
+      },
+      "required": [
+        "step",
+        "p05",
+        "p25",
+        "p50",
+        "p75",
+        "p95",
+        "up_prob"
+      ],
+      "title": "ForecastStepOut",
+      "type": "object"
+    },
+    "SignalOut": {
+      "additionalProperties": false,
+      "properties": {
+        "horizon": {
+          "description": "交易日數：5、10、20",
+          "type": "integer"
+        },
+        "up_prob": {
+          "type": "number"
+        },
+        "exp_ret": {
+          "description": "期末報酬中位數",
+          "type": "number"
+        },
+        "p10_ret": {
+          "description": "期末報酬第 10 百分位（下檔風險）",
+          "type": "number"
+        },
+        "mdd_p50": {
+          "description": "途中最大回檔中位數（負值）",
+          "type": "number"
+        },
+        "label": {
+          "description": "偏多／略偏多／中性／略偏空／偏空",
+          "type": "string"
+        }
+      },
+      "required": [
+        "horizon",
+        "up_prob",
+        "exp_ret",
+        "p10_ret",
+        "mdd_p50",
+        "label"
+      ],
+      "title": "SignalOut",
+      "type": "object"
+    },
+    "TrackRecord": {
+      "additionalProperties": false,
+      "description": "模型在回測中的方向命中率，與兩種單純基準比較。",
+      "properties": {
+        "horizon": {
+          "type": "integer"
+        },
+        "n": {
+          "description": "回測樣本數（不含平盤）",
+          "type": "integer"
+        },
+        "hit_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "方向命中率"
+        },
+        "baseline_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "較好的單純基準：一律看多數方向、或延續近 20 日趨勢"
+        },
+        "always_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "一律看多數方向的命中率"
+        },
+        "momentum_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "延續近 20 日趨勢的命中率"
+        },
+        "z": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "has_edge": {
+          "description": "命中率明顯優於基準（單尾 p < 0.1，樣本至少 20）",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "horizon",
+        "n",
+        "hit_rate",
+        "baseline_rate",
+        "always_rate",
+        "momentum_rate",
+        "z",
+        "has_edge"
+      ],
+      "title": "TrackRecord",
+      "type": "object"
+    },
+    "Forecast": {
+      "additionalProperties": false,
+      "description": "data/forecast/{symbol}.json：最新預測。價格為基準日的還原價（＝基準日的原始收盤尺度）。",
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "base_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "base_close": {
+          "type": "number"
+        },
+        "future_dates": {
+          "description": "預測的各交易日（假日以平日估計）",
+          "items": {
+            "format": "date",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/ForecastStepOut"
+          },
+          "type": "array"
+        },
+        "paths": {
+          "description": "各條取樣路徑的收盤價",
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "signals": {
+          "items": {
+            "$ref": "#/$defs/SignalOut"
+          },
+          "type": "array"
+        },
+        "track": {
+          "items": {
+            "$ref": "#/$defs/TrackRecord"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "symbol",
+        "model",
+        "base_date",
+        "base_close",
+        "future_dates",
+        "steps",
+        "paths",
+        "signals",
+        "track"
+      ],
+      "title": "Forecast",
+      "type": "object"
+    },
+    "BacktestPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "base_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "base_close": {
+          "description": "以基準日當下已知的公司行動還原的收盤（＝當日原始收盤）",
+          "type": "number"
+        },
+        "scale": {
+          "description": "換算成目前還原價要乘上的因子（基準日之後的公司行動）",
+          "type": "number"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/ForecastStepOut"
+          },
+          "type": "array"
+        },
+        "actual": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": "實際報酬，鍵為 5、10、20",
+          "type": "object"
+        },
+        "exp": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "模型預期報酬（中位數），鍵為 5、10、20",
+          "type": "object"
+        }
+      },
+      "required": [
+        "base_date",
+        "base_close",
+        "scale",
+        "steps",
+        "actual",
+        "exp"
+      ],
+      "title": "BacktestPoint",
+      "type": "object"
+    },
+    "Backtest": {
+      "additionalProperties": false,
+      "description": "data/forecast/backtest/{symbol}.json：回測重播用。",
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "points": {
+          "items": {
+            "$ref": "#/$defs/BacktestPoint"
+          },
+          "type": "array"
+        },
+        "track": {
+          "items": {
+            "$ref": "#/$defs/TrackRecord"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "symbol",
+        "model",
+        "points",
+        "track"
+      ],
+      "title": "Backtest",
+      "type": "object"
+    },
+    "RankIC": {
+      "additionalProperties": false,
+      "properties": {
+        "horizon": {
+          "type": "integer"
+        },
+        "mean": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "各基準日橫斷面 Spearman 相關的平均"
+        },
+        "n_dates": {
+          "type": "integer"
+        },
+        "positive_share": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Rank IC 為正的基準日比例"
+        }
+      },
+      "required": [
+        "horizon",
+        "mean",
+        "n_dates",
+        "positive_share"
+      ],
+      "title": "RankIC",
+      "type": "object"
+    },
+    "RankingItem": {
+      "additionalProperties": false,
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "industry": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "base_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "signals": {
+          "items": {
+            "$ref": "#/$defs/SignalOut"
+          },
+          "type": "array"
+        },
+        "track": {
+          "items": {
+            "$ref": "#/$defs/TrackRecord"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "symbol",
+        "name",
+        "industry",
+        "base_date",
+        "signals",
+        "track"
+      ],
+      "title": "RankingItem",
+      "type": "object"
+    },
+    "Ranking": {
+      "additionalProperties": false,
+      "description": "data/forecast/ranking.json：追蹤池的訊號排行與模型整體表現。",
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "description": "lookback、pred_len、n_paths、backtest_every、backtest_years",
+          "type": "object"
+        },
+        "label_rules": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/RankingItem"
+          },
+          "type": "array"
+        },
+        "pool": {
+          "description": "整個追蹤池合計的命中率",
+          "items": {
+            "$ref": "#/$defs/TrackRecord"
+          },
+          "type": "array"
+        },
+        "rank_ic": {
+          "items": {
+            "$ref": "#/$defs/RankIC"
+          },
+          "type": "array"
+        },
+        "backtest_dates": {
+          "items": {
+            "format": "date",
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "model",
+        "settings",
+        "label_rules",
+        "items",
+        "pool",
+        "rank_ic",
+        "backtest_dates"
+      ],
+      "title": "Ranking",
+      "type": "object"
+    },
     "SourceHealth": {
       "additionalProperties": false,
       "description": "一個資料來源的狀態。",

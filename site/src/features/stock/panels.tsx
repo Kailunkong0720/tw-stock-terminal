@@ -26,13 +26,13 @@ export function BigMoves({ candles, etf, adjusted }: { candles: Candle[]; etf: b
             <button
               type="button"
               onClick={() => focus(m.time)}
-              className={`grid w-full grid-cols-[1fr_auto_auto] items-center gap-3 px-3 py-1 text-left text-xs transition-colors hover:bg-hover ${
+              className={`grid w-full grid-cols-[auto_1fr_auto] items-center gap-2 whitespace-nowrap px-3 py-1 text-left text-xs transition-colors hover:bg-hover ${
                 hover === m.time ? 'bg-hover' : ''
               }`}
             >
               <span className="num text-text-2">{m.time}</span>
-              <span className="num text-text-3">{formatPrice(m.close, { etf, adjusted })}</span>
-              <span className={`num w-16 text-right ${toneClass(m.ret)}`}>{formatPct(m.ret)}</span>
+              <span className="num truncate text-right text-text-3">{formatPrice(m.close, { etf, adjusted })}</span>
+              <span className={`num w-14 text-right ${toneClass(m.ret)}`}>{formatPct(m.ret, 1)}</span>
             </button>
           </li>
         ))}
@@ -73,8 +73,12 @@ export function FlowSummary({ flows, points }: { flows: Flows | undefined; point
   const pctNow = pct[pct.length - 1]
   const pct1y = pct.length > 52 ? pct[pct.length - 53] : pct[0]
 
+  const lastDate = points[points.length - 1]!.time
   return (
     <div className="grid grid-cols-2 gap-x-4 gap-y-3 p-3">
+      <p className="col-span-2 -mb-1 text-2xs text-text-3">
+        截至 <span className="num">{lastDate}</span>
+      </p>
       {[5, 20, 60].map((n) => (
         <Stat key={n} label={`外資 近 ${n} 日`} sub={formatYi(fv(n), 'M')}>
           <span className={toneClass(f(n))}>{formatLots(f(n), true)} 張</span>

@@ -42,6 +42,8 @@ type Prefs = {
   adjusted: boolean
   range: RangeKey
   subPane: 'volume' | 'foreign' | 'foreignCum'
+  showCone: boolean
+  setShowCone: (v: boolean) => void
   toggleWatch: (s: string) => void
   pushRecent: (s: string) => void
   setAdjusted: (v: boolean) => void
@@ -57,6 +59,8 @@ export const usePrefs = create<Prefs>()(
       adjusted: true,
       range: '1Y',
       subPane: 'volume',
+      showCone: true,
+      setShowCone: (showCone) => set({ showCone }),
       toggleWatch: (s) =>
         set((st) => ({ watchlist: st.watchlist.includes(s) ? st.watchlist.filter((x) => x !== s) : [...st.watchlist, s] })),
       pushRecent: (s) => set((st) => ({ recent: [s, ...st.recent.filter((x) => x !== s)].slice(0, 8) })),

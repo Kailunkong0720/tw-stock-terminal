@@ -8,6 +8,7 @@ import {
 
 import { AppShell } from './app/AppShell'
 import { AboutPage } from './features/about/AboutPage'
+import { ForecastPage } from './features/forecast/ForecastPage'
 import { MarketPage } from './features/market/MarketPage'
 import { SectionPage } from './features/placeholder/SectionPage'
 import { StockPage } from './features/stock/StockPage'
@@ -38,13 +39,7 @@ const routes = [
       />
     ),
   }),
-  createRoute({
-    getParentRoute: () => rootRoute,
-    path: '/forecast',
-    component: () => (
-      <SectionPage title="模型" detail="Kronos 對追蹤池的訊號排行、回測命中率與回測重播。" />
-    ),
-  }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/forecast', component: ForecastPage }),
   createRoute({
     getParentRoute: () => rootRoute,
     path: '/explain',

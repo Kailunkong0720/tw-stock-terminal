@@ -1,7 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
 
 import schema from './contract/schema.json'
-import type { Bars, Calendar, Flows, MarketFlows, Meta, Overview, Securities } from './contract/types'
+import type {
+  Backtest,
+  Bars,
+  Calendar,
+  Flows,
+  Forecast,
+  MarketFlows,
+  Meta,
+  Overview,
+  Ranking,
+  Securities,
+} from './contract/types'
 
 /** 網站預期的資料契約版本（由 pipeline 產生的 schema 決定，單一來源）。 */
 export const CONTRACT_VERSION = (schema as { 'x-contract-version': number })['x-contract-version']
@@ -72,3 +83,9 @@ export const useOverview = () => useDataFile<Overview>('market/overview.json', [
 export const useMarketFlows = () => useDataFile<MarketFlows>('flows/market.json', ['market-flows'])
 export const useBars = (symbol: string) => useDataFile<Bars>(`bars/${symbol}.json`, ['bars', symbol])
 export const useFlows = (symbol: string) => useDataFile<Flows>(`flows/${symbol}.json`, ['flows', symbol])
+export const useRanking = () => useDataFile<Ranking>('forecast/ranking.json', ['ranking'])
+/** 非追蹤池的股票沒有預測檔（404），呼叫端以 tracked 決定是否啟用。 */
+export const useForecast = (symbol: string, enabled = true) =>
+  useDataFile<Forecast>(enabled ? `forecast/${symbol}.json` : null, ['forecast', symbol])
+export const useBacktest = (symbol: string, enabled = true) =>
+  useDataFile<Backtest>(enabled ? `forecast/backtest/${symbol}.json` : null, ['backtest', symbol])

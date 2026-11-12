@@ -4,6 +4,9 @@
  * tw-stock-terminal 靜態資料契約（由 pipeline 自動產生，請勿手改）
  */
 export interface Contract {
+  Forecast?: Forecast;
+  Backtest?: Backtest;
+  Ranking?: Ranking;
   Meta?: Meta;
   Calendar?: Calendar;
   Securities?: Securities;
@@ -12,6 +15,168 @@ export interface Contract {
   MarketFlows?: MarketFlows;
   IndustryFlows?: IndustryFlows;
   Overview?: Overview;
+}
+/**
+ * data/forecast/{symbol}.json：最新預測。價格為基準日的還原價（＝基準日的原始收盤尺度）。
+ */
+export interface Forecast {
+  symbol: string;
+  model: string;
+  base_date: string;
+  base_close: number;
+  /**
+   * 預測的各交易日（假日以平日估計）
+   */
+  future_dates: string[];
+  steps: ForecastStepOut[];
+  /**
+   * 各條取樣路徑的收盤價
+   */
+  paths: number[][];
+  signals: SignalOut[];
+  track: TrackRecord[];
+}
+export interface ForecastStepOut {
+  /**
+   * 基準日之後第幾個交易日（1 起算）
+   */
+  step: number;
+  p05: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p95: number;
+  /**
+   * 收盤高於基準日收盤的路徑比例
+   */
+  up_prob: number;
+}
+export interface SignalOut {
+  /**
+   * 交易日數：5、10、20
+   */
+  horizon: number;
+  up_prob: number;
+  /**
+   * 期末報酬中位數
+   */
+  exp_ret: number;
+  /**
+   * 期末報酬第 10 百分位（下檔風險）
+   */
+  p10_ret: number;
+  /**
+   * 途中最大回檔中位數（負值）
+   */
+  mdd_p50: number;
+  /**
+   * 偏多／略偏多／中性／略偏空／偏空
+   */
+  label: string;
+}
+/**
+ * 模型在回測中的方向命中率，與兩種單純基準比較。
+ */
+export interface TrackRecord {
+  horizon: number;
+  /**
+   * 回測樣本數（不含平盤）
+   */
+  n: number;
+  /**
+   * 方向命中率
+   */
+  hit_rate: number | null;
+  /**
+   * 較好的單純基準：一律看多數方向、或延續近 20 日趨勢
+   */
+  baseline_rate: number | null;
+  /**
+   * 一律看多數方向的命中率
+   */
+  always_rate: number | null;
+  /**
+   * 延續近 20 日趨勢的命中率
+   */
+  momentum_rate: number | null;
+  z: number | null;
+  /**
+   * 命中率明顯優於基準（單尾 p < 0.1，樣本至少 20）
+   */
+  has_edge: boolean;
+}
+/**
+ * data/forecast/backtest/{symbol}.json：回測重播用。
+ */
+export interface Backtest {
+  symbol: string;
+  model: string;
+  points: BacktestPoint[];
+  track: TrackRecord[];
+}
+export interface BacktestPoint {
+  base_date: string;
+  /**
+   * 以基準日當下已知的公司行動還原的收盤（＝當日原始收盤）
+   */
+  base_close: number;
+  /**
+   * 換算成目前還原價要乘上的因子（基準日之後的公司行動）
+   */
+  scale: number;
+  steps: ForecastStepOut[];
+  /**
+   * 實際報酬，鍵為 5、10、20
+   */
+  actual: {
+    [k: string]: number | null;
+  };
+  /**
+   * 模型預期報酬（中位數），鍵為 5、10、20
+   */
+  exp: {
+    [k: string]: number;
+  };
+}
+/**
+ * data/forecast/ranking.json：追蹤池的訊號排行與模型整體表現。
+ */
+export interface Ranking {
+  model: string;
+  /**
+   * lookback、pred_len、n_paths、backtest_every、backtest_years
+   */
+  settings: {
+    [k: string]: number;
+  };
+  label_rules: string[];
+  items: RankingItem[];
+  /**
+   * 整個追蹤池合計的命中率
+   */
+  pool: TrackRecord[];
+  rank_ic: RankIC[];
+  backtest_dates: string[];
+}
+export interface RankingItem {
+  symbol: string;
+  name: string;
+  industry: string | null;
+  base_date: string;
+  signals: SignalOut[];
+  track: TrackRecord[];
+}
+export interface RankIC {
+  horizon: number;
+  /**
+   * 各基準日橫斷面 Spearman 相關的平均
+   */
+  mean: number | null;
+  n_dates: number;
+  /**
+   * Rank IC 為正的基準日比例
+   */
+  positive_share: number | null;
 }
 /**
  * data/meta.json：網站啟動時第一個讀的檔案。

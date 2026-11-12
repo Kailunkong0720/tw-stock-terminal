@@ -35,6 +35,10 @@ BUILD_NOTES = [
     "外資買賣超是交易所內的買賣淨額，不是跨境資金的匯入匯出；也包含透過境外帳戶下單的本國資金。",
     "外資持股比率取每週最後一個交易日與資料截止日。",
     "追蹤池：資料截止日市值前 150 大的上市普通股，加上 0050、0056、00878、006208。",
+    "K 線模型：Kronos-mini（開源，未針對台股微調），回看 256 個交易日、20 條取樣路徑、預測 20 個交易日。"
+    "選 mini 而非 small 是因為在一般電腦的 CPU 上 small 慢 5 倍，回測跑不完。",
+    "回測：最近 2 年、每 20 個交易日一個基準日，每次只用基準日當天以前的資料（含還原因子）。"
+    "命中率與兩種單純基準比較：一律看多數方向、延續近 20 日趨勢。",
 ]
 
 
@@ -83,8 +87,11 @@ def run_export(settings: Settings) -> ExportWriter:
     migrate(settings)
     writer = ExportWriter(settings.export_dir)
     writer.reset()
+    from pipeline.export.forecast import export_forecasts
+
     exporter = MarketExporter(get_engine(settings), writer)
     exporter.run()
+    export_forecasts(get_engine(settings), writer, exporter.calendar)
     # 資料截止日 = 這次輸出的日曆最後一天（回補程序可能同時在寫入更新的日子）
     as_of = exporter.calendar[-1] if exporter.calendar else None
     writer.write("meta.json", build_meta(settings, as_of))

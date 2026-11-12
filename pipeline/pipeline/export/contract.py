@@ -170,8 +170,103 @@ class Overview(_Model):
     breadth: Breadth
 
 
+class ForecastStepOut(_Model):
+    step: int = Field(description="基準日之後第幾個交易日（1 起算）")
+    p05: float
+    p25: float
+    p50: float
+    p75: float
+    p95: float
+    up_prob: float = Field(description="收盤高於基準日收盤的路徑比例")
+
+
+class SignalOut(_Model):
+    horizon: int = Field(description="交易日數：5、10、20")
+    up_prob: float
+    exp_ret: float = Field(description="期末報酬中位數")
+    p10_ret: float = Field(description="期末報酬第 10 百分位（下檔風險）")
+    mdd_p50: float = Field(description="途中最大回檔中位數（負值）")
+    label: str = Field(description="偏多／略偏多／中性／略偏空／偏空")
+
+
+class TrackRecord(_Model):
+    """模型在回測中的方向命中率，與兩種單純基準比較。"""
+
+    horizon: int
+    n: int = Field(description="回測樣本數（不含平盤）")
+    hit_rate: float | None = Field(description="方向命中率")
+    baseline_rate: float | None = Field(description="較好的單純基準：一律看多數方向、或延續近 20 日趨勢")
+    always_rate: float | None = Field(description="一律看多數方向的命中率")
+    momentum_rate: float | None = Field(description="延續近 20 日趨勢的命中率")
+    z: float | None
+    has_edge: bool = Field(description="命中率明顯優於基準（單尾 p < 0.1，樣本至少 20）")
+
+
+class Forecast(_Model):
+    """data/forecast/{symbol}.json：最新預測。價格為基準日的還原價（＝基準日的原始收盤尺度）。"""
+
+    symbol: str
+    model: str
+    base_date: date
+    base_close: float
+    future_dates: list[date] = Field(description="預測的各交易日（假日以平日估計）")
+    steps: list[ForecastStepOut]
+    paths: list[list[float]] = Field(description="各條取樣路徑的收盤價")
+    signals: list[SignalOut]
+    track: list[TrackRecord]
+
+
+class BacktestPoint(_Model):
+    base_date: date
+    base_close: float = Field(description="以基準日當下已知的公司行動還原的收盤（＝當日原始收盤）")
+    scale: float = Field(description="換算成目前還原價要乘上的因子（基準日之後的公司行動）")
+    steps: list[ForecastStepOut]
+    actual: dict[str, float | None] = Field(description="實際報酬，鍵為 5、10、20")
+    exp: dict[str, float] = Field(description="模型預期報酬（中位數），鍵為 5、10、20")
+
+
+class Backtest(_Model):
+    """data/forecast/backtest/{symbol}.json：回測重播用。"""
+
+    symbol: str
+    model: str
+    points: list[BacktestPoint]
+    track: list[TrackRecord]
+
+
+class RankIC(_Model):
+    horizon: int
+    mean: float | None = Field(description="各基準日橫斷面 Spearman 相關的平均")
+    n_dates: int
+    positive_share: float | None = Field(description="Rank IC 為正的基準日比例")
+
+
+class RankingItem(_Model):
+    symbol: str
+    name: str
+    industry: str | None
+    base_date: date
+    signals: list[SignalOut]
+    track: list[TrackRecord]
+
+
+class Ranking(_Model):
+    """data/forecast/ranking.json：追蹤池的訊號排行與模型整體表現。"""
+
+    model: str
+    settings: dict[str, int] = Field(description="lookback、pred_len、n_paths、backtest_every、backtest_years")
+    label_rules: list[str]
+    items: list[RankingItem]
+    pool: list[TrackRecord] = Field(description="整個追蹤池合計的命中率")
+    rank_ic: list[RankIC]
+    backtest_dates: list[date]
+
+
 # 產生 JSON Schema / TypeScript 型別時要包含的頂層模型
 EXPORTED_MODELS: list[type[BaseModel]] = [
+    Forecast,
+    Backtest,
+    Ranking,
     Meta,
     Calendar,
     Securities,

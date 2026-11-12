@@ -6,12 +6,17 @@ import { KLineChart, type SubPane } from '../../charts/KLineChart'
 import { VolumeProfile } from '../../charts/VolumeProfile'
 import { EmptyState, Panel } from '../../design/Panel'
 import { Segmented } from '../../design/Segmented'
-import { useBars, useCalendar, useFlows, useSecurities } from '../../lib/data'
+import { useBacktest, useBars, useCalendar, useFlows, useForecast, useSecurities } from '../../lib/data'
 import { toCandles, toFlowPoints } from '../../lib/series'
 import { RANGES, type RangeKey, usePrefs } from '../../lib/store'
 import { useMedia } from '../../lib/useMedia'
+import { coneFromBacktest, coneFromForecast } from '../forecast/cones'
+import { ModelPanel } from '../forecast/ModelPanel'
+import { ReplayBar } from '../forecast/ReplayBar'
 import { ActionsTable, BigMoves, FlowSummary, FlowTable } from './panels'
 import { InfoBar } from './InfoBar'
+
+const REPLAY_STEPS = 20
 
 function Handle({ dir }: { dir: 'h' | 'v' }) {
   return (
@@ -51,8 +56,61 @@ export function StockPage() {
   const dates = cal.data?.dates
   const raw = useMemo(() => (bars.data && dates ? toCandles(bars.data, dates, false) : []), [bars.data, dates])
   const adj = useMemo(() => (bars.data && dates ? toCandles(bars.data, dates, true) : []), [bars.data, dates])
-  const candles = adjusted ? adj : raw
+  const allCandles = adjusted ? adj : raw
   const points = useMemo(() => (flows.data && dates ? toFlowPoints(flows.data, dates) : []), [flows.data, dates])
+
+  // ── Kronos：最新預測與回測重播 ──────────────────────────────────────
+  const tracked = Boolean(sec?.tracked)
+  const fc = useForecast(symbol, tracked)
+  const bt = useBacktest(symbol, tracked)
+  const showCone = usePrefs((s) => s.showCone)
+  const setShowCone = usePrefs((s) => s.setShowCone)
+  const [replay, setReplay] = useState(false)
+  const [rIdx, setRIdx] = useState(0)
+  const [reveal, setReveal] = useState(REPLAY_STEPS)
+  const [playing, setPlaying] = useState(false)
+  const btPoints = bt.data?.points ?? []
+
+  useEffect(() => {
+    setReplay(false)
+    setPlaying(false)
+  }, [symbol])
+  useEffect(() => {
+    setRIdx(Math.max(0, btPoints.length - 1))
+    setReveal(REPLAY_STEPS)
+  }, [btPoints.length])
+
+  // 播放：實際走勢逐日疊上去，走完 20 天後換下一個基準日
+  useEffect(() => {
+    if (!replay || !playing) return
+    const id = window.setTimeout(
+      () => {
+        if (reveal < REPLAY_STEPS) setReveal(reveal + 1)
+        else if (rIdx < btPoints.length - 1) {
+          setRIdx(rIdx + 1)
+          setReveal(0)
+        } else setPlaying(false)
+      },
+      reveal < REPLAY_STEPS ? 70 : 900,
+    )
+    return () => window.clearTimeout(id)
+  }, [replay, playing, reveal, rIdx, btPoints.length])
+
+  const point = replay ? btPoints[rIdx] : undefined
+  const baseIdx = point && dates ? dates.indexOf(point.base_date) : -1
+  const candles = useMemo(() => {
+    if (!point || !dates || baseIdx < 0) return allCandles
+    const cutoff = dates[Math.min(dates.length - 1, baseIdx + reveal)]!
+    return allCandles.filter((c) => c.time <= cutoff)
+  }, [allCandles, point, dates, baseIdx, reveal])
+  const cone = useMemo(() => {
+    if (point && dates) return coneFromBacktest(point, dates, adjusted)
+    return showCone && fc.data ? coneFromForecast(fc.data) : null
+  }, [point, dates, adjusted, showCone, fc.data])
+  const replayWindow = useMemo(() => {
+    if (!point || !dates || baseIdx < 0) return null
+    return { from: dates[Math.max(0, baseIdx - 80)]!, to: dates[Math.min(dates.length - 1, baseIdx + REPLAY_STEPS + 2)]! }
+  }, [point, dates, baseIdx])
 
   useEffect(() => {
     if (sec) pushRecent(sec.symbol)
@@ -125,17 +183,51 @@ export function StockPage() {
 
   const loading = <EmptyState title="讀取中…" />
   const chart = (
-    <Panel title="K 線" actions={chartActions} className="h-full">
+    <Panel
+      title={replay ? '回測重播' : 'K 線'}
+      actions={chartActions}
+      className="h-full"
+      bodyClassName="flex flex-col"
+    >
       {candles.length ? (
-        <KLineChart
-          candles={candles}
-          actions={bars.data?.actions ?? []}
-          flows={points}
-          subPane={subPane}
-          range={range}
-          adjusted={adjusted}
-          etf={etf}
-        />
+        <>
+          <div className="min-h-0 flex-1">
+            <KLineChart
+              candles={candles}
+              actions={bars.data?.actions ?? []}
+              flows={points}
+              subPane={subPane}
+              range={range}
+              adjusted={adjusted}
+              etf={etf}
+              cone={cone}
+              window={replayWindow}
+            />
+          </div>
+          {replay && btPoints.length > 0 && (
+            <ReplayBar
+              points={btPoints}
+              idx={rIdx}
+              onIdx={(i) => {
+                setPlaying(false)
+                setRIdx(i)
+                setReveal(REPLAY_STEPS)
+              }}
+              playing={playing}
+              onPlay={() => {
+                if (playing) return setPlaying(false)
+                if (rIdx >= btPoints.length - 1 && reveal >= REPLAY_STEPS) setRIdx(0)
+                setReveal(0)
+                setPlaying(true)
+              }}
+              onClose={() => {
+                setPlaying(false)
+                setReplay(false)
+              }}
+              horizon="20"
+            />
+          )}
+        </>
       ) : (
         loading
       )}
@@ -158,7 +250,22 @@ export function StockPage() {
   )
   const model = (
     <Panel title="模型觀點" className="h-full">
-      <EmptyState detail="Kronos 對未來 5、10、20 個交易日的看法，以及它過去在這檔股票上的命中率。" />
+      <ModelPanel
+        tracked={tracked}
+        forecast={fc.data}
+        loading={tracked && fc.isPending}
+        showCone={showCone}
+        onToggleCone={() => {
+          setReplay(false)
+          setShowCone(!showCone)
+        }}
+        replay={replay}
+        onToggleReplay={() => {
+          setPlaying(false)
+          setReplay(!replay)
+        }}
+        hasBacktest={btPoints.length > 0}
+      />
     </Panel>
   )
   const bottom = (

@@ -20,6 +20,7 @@ import { formatLots, formatPct, formatPrice, formatYi, toneClass } from '../lib/
 import { useUpDown } from '../lib/prefs'
 import { type Candle, type FlowPoint, sma } from '../lib/series'
 import { RANGES, type RangeKey, useView } from '../lib/store'
+import { type ConeData, ForecastCone } from './forecastCone'
 import { alpha, readTheme } from './theme'
 
 export type SubPane = 'volume' | 'foreign' | 'foreignCum'
@@ -32,7 +33,13 @@ type Props = {
   range: RangeKey
   adjusted: boolean
   etf: boolean
+  /** 預測錐（最新預測或回測重播的某一個基準日） */
+  cone?: ConeData | null
+  /** 指定可視區間（回測重播用）；設定時忽略 range */
+  window?: { from: string; to: string } | null
 }
+
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 const ACTION_LABEL: Record<string, string> = {
   dividend_cash: '息',
@@ -47,13 +54,14 @@ const MA = [5, 20, 60] as const
 
 type Legend = { c: Candle; prev: Candle | null; ma: (number | null)[]; flow: FlowPoint | null; cum: number | null }
 
-export function KLineChart({ candles, actions, flows, subPane, range, adjusted, etf }: Props) {
+export function KLineChart({ candles, actions, flows, subPane, range, adjusted, etf, cone = null, window: win = null }: Props) {
   const box = useRef<HTMLDivElement>(null)
   const chart = useRef<IChartApi | null>(null)
   const candle = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const maSeries = useRef<ISeriesApi<'Line'>[]>([])
   const sub = useRef<ISeriesApi<'Histogram'> | ISeriesApi<'Line'> | null>(null)
   const markers = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
+  const conePrim = useRef<ForecastCone | null>(null)
   const updown = useUpDown()
   const focusDate = useView((s) => s.focusDate)
   const [legend, setLegend] = useState<Legend | null>(null)
@@ -123,6 +131,8 @@ export function KLineChart({ candles, actions, flows, subPane, range, adjusted, 
       }),
     )
     markers.current = createSeriesMarkers(candle.current, [])
+    conePrim.current = new ForecastCone({ band: t.s3, median: t.text1, path: t.s3 })
+    candle.current.attachPrimitive(conePrim.current)
 
     const onRange = () => {
       const lr = c.timeScale().getVisibleLogicalRange()
@@ -142,6 +152,7 @@ export function KLineChart({ candles, actions, flows, subPane, range, adjusted, 
       maSeries.current = []
       sub.current = null
       markers.current = null
+      conePrim.current = null
     }
   }, [])
 
@@ -156,7 +167,13 @@ export function KLineChart({ candles, actions, flows, subPane, range, adjusted, 
     const cs = candle.current
     if (!cs) return
     cs.applyOptions({ upColor: t.up, downColor: t.down, wickUpColor: t.up, wickDownColor: t.down })
-    cs.setData(candles.map((c) => ({ time: c.time as Time, open: c.open, high: c.high, low: c.low, close: c.close })))
+    // 預測錐的未來日期以空白資料點延伸時間軸，錐才有位置可畫
+    const lastTime = candles[candles.length - 1]?.time ?? ''
+    const future = (cone?.times ?? []).filter((d) => d > lastTime).map((d) => ({ time: d as Time }))
+    cs.setData([
+      ...candles.map((c) => ({ time: c.time as Time, open: c.open, high: c.high, low: c.low, close: c.close })),
+      ...future,
+    ])
     maSeries.current.forEach((s, k) =>
       s.setData(
         candles.flatMap((c, j) => (ma[k]![j] == null ? [] : [{ time: c.time as Time, value: ma[k]![j]! }])),
@@ -177,7 +194,29 @@ export function KLineChart({ candles, actions, flows, subPane, range, adjusted, 
     }
     markers.current?.setMarkers(ms.sort((a, b) => String(a.time).localeCompare(String(b.time))))
     setLegend(legendAt(candles.length - 1))
-  }, [candles, actions, ma, byTime, updown])
+  }, [candles, actions, ma, byTime, updown, cone?.times])
+
+  // 預測錐：資料換了就重播一次「路徑逐條畫出 → 收斂成帶狀」的動畫
+  useEffect(() => {
+    const prim = conePrim.current
+    if (!prim) return
+    prim.setData(cone)
+    if (!cone) return
+    if (reducedMotion()) {
+      prim.setProgress(1)
+      return
+    }
+    let raf = 0
+    const t0 = performance.now()
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / 1400)
+      prim.setProgress(1 - (1 - p) ** 3)
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    prim.setProgress(0)
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [cone])
 
   // 副圖
   useEffect(() => {
@@ -229,14 +268,19 @@ export function KLineChart({ candles, actions, flows, subPane, range, adjusted, 
     panes[1]?.setStretchFactor(1)
   }, [subPane, candles, flowByTime, cumForeign, updown])
 
-  // 時間區間
+  // 時間區間（指定 window 時以 window 為準）
+  const extra = cone ? cone.times.filter((d) => d > (candles[candles.length - 1]?.time ?? '')).length : 0
   useEffect(() => {
     const c = chart.current
     if (!c || candles.length === 0) return
+    if (win) {
+      c.timeScale().setVisibleRange({ from: win.from as Time, to: win.to as Time })
+      return
+    }
     const days = RANGES.find((r) => r.key === range)?.days
     if (days == null) c.timeScale().fitContent()
-    else c.timeScale().setVisibleLogicalRange({ from: Math.max(0, candles.length - days), to: candles.length + 3 })
-  }, [range, candles.length])
+    else c.timeScale().setVisibleLogicalRange({ from: Math.max(0, candles.length - days), to: candles.length + extra + 3 })
+  }, [range, candles.length, extra, win])
 
   // 其他面板要求聚焦某一天（例如點擊大波動日）
   useEffect(() => {

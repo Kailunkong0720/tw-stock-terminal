@@ -117,7 +117,7 @@ class MarketExporter:
                     symbol=r.symbol,
                     name=r.name,
                     kind=r.kind,
-                    industry=r.industry,
+                    industry=None if pd.isna(r.industry) else r.industry,
                     tracked=bool(r.tracked),
                     first=pd.Timestamp(r.first_bar).date(),
                     last=pd.Timestamp(r.last_bar).date(),
