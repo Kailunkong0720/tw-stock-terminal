@@ -17,7 +17,8 @@ CONTRACT_VERSION = 1
 
 
 class _Model(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    # 輸出時每個欄位都會寫出（包含有預設值的），所以在 schema 中標成必填，前端型別才不會多出 undefined
+    model_config = ConfigDict(extra="forbid", json_schema_serialization_defaults_required=True)
 
 
 class SourceHealth(_Model):

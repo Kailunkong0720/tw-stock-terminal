@@ -1,0 +1,104 @@
+/*
+ * 設計 token（PLAN.md 7.3）。元件只引用這些變數，不寫死色碼。
+ *
+ * --accent 只用在可互動的介面元件（選中的分頁、主要按鈕、焦點框）；
+ * --up / --down 只用在數字與 K 線。兩者刻意分開，因為台股是紅漲綠跌，
+ * 而參考設計的強調色是綠色。
+ */
+@import 'tailwindcss';
+
+:root {
+  --bg-canvas: #0a0c0b;
+  --bg-panel: #121514;
+  --bg-raised: #1a1e1c;
+  --bg-hover: #1f2421;
+  --line: #232826;
+  --line-strong: #2e3431;
+  --text-1: #e8ecea;
+  --text-2: #8b9490;
+  --text-3: #5a625e;
+  --accent: #19d36b;
+  --accent-dim: #0f3d24;
+  --up: #f23645;
+  --down: #1fb36b;
+  --flat: #8b9490;
+  --warn: #e8a23d;
+
+  --radius-panel: 8px;
+  --radius-control: 6px;
+
+  --font-sans: 'IBM Plex Sans', 'Noto Sans TC Variable', 'Noto Sans TC', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Noto Sans TC Variable', ui-monospace, monospace;
+
+  color-scheme: dark;
+}
+
+/* 設定中切換成「綠漲紅跌」時，只交換漲跌兩個值 */
+:root[data-updown='green-up'] {
+  --up: #1fb36b;
+  --down: #f23645;
+}
+
+@theme inline {
+  --color-canvas: var(--bg-canvas);
+  --color-panel: var(--bg-panel);
+  --color-raised: var(--bg-raised);
+  --color-hover: var(--bg-hover);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-flat: var(--flat);
+  --color-warn: var(--warn);
+  --radius-panel: var(--radius-panel);
+  --radius-control: var(--radius-control);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --text-2xs: 10px;
+  --text-2xs--line-height: 14px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-canvas);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* 所有數字、代號、價格：等寬且數字寬度一致，跳動時不會左右抖 */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'zero' 0;
+  letter-spacing: -0.01em;
+}
+
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+::selection {
+  background: var(--accent-dim);
+  color: var(--text-1);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}

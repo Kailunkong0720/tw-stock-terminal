@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from pydantic import TypeAdapter
 
 from pipeline.core.config import COVERAGE_START, Settings
-from pipeline.export.contract import EXPORTED_MODELS, Meta, SourceHealth
+from pipeline.export.contract import CONTRACT_VERSION, EXPORTED_MODELS, Meta, SourceHealth
 from pipeline.export.writer import ExportWriter
 
 log = logging.getLogger(__name__)
@@ -39,19 +39,37 @@ def run_export(settings: Settings) -> ExportWriter:
     return writer
 
 
+def _strip_property_titles(node: object) -> None:
+    """拿掉欄位層級的 title，避免 json2ts 為每個欄位產生一個型別別名。模型層級的 title 保留。"""
+    if isinstance(node, dict):
+        props = node.get("properties")
+        if isinstance(props, dict):
+            for prop in props.values():
+                if isinstance(prop, dict):
+                    prop.pop("title", None)
+        for v in node.values():
+            _strip_property_titles(v)
+    elif isinstance(node, list):
+        for v in node:
+            _strip_property_titles(v)
+
+
 def json_schema() -> dict:
     """所有頂層模型合併成一份 JSON Schema（給前端產生型別用）。"""
     defs: dict = {}
     for model in EXPORTED_MODELS:
-        schema = TypeAdapter(model).json_schema(ref_template="#/$defs/{model}")
+        schema = TypeAdapter(model).json_schema(ref_template="#/$defs/{model}", mode="serialization")
         defs.update(schema.pop("$defs", {}))
         defs[model.__name__] = schema
+    _strip_property_titles(defs)
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "title": "Contract",
         "description": "tw-stock-terminal 靜態資料契約（由 pipeline 自動產生，請勿手改）",
+        "x-contract-version": CONTRACT_VERSION,
         "type": "object",
         "properties": {m.__name__: {"$ref": f"#/$defs/{m.__name__}"} for m in EXPORTED_MODELS},
+        "additionalProperties": False,
         "$defs": defs,
     }
 
