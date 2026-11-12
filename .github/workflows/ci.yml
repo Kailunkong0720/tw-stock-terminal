@@ -26,7 +26,7 @@ jobs:
         with:
           working-directory: pipeline
           enable-cache: true
-      - run: uv sync --locked
+      - run: uv sync --locked --no-group kronos
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run pytest

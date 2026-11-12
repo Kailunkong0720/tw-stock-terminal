@@ -18,6 +18,17 @@ dev = [
     "pytest>=9.2.0",
     "ruff>=0.17.4",
 ]
+# Kronos 推論用。本機預設安裝；CI 以 --no-group kronos 排除（Linux 上的 torch 很大，CI 也用不到）
+kronos = [
+    "einops>=0.8.2",
+    "huggingface-hub>=2.4.0",
+    "safetensors>=0.8.0",
+    "torch>=2.15.0",
+    "tqdm>=4.70.1",
+]
+
+[tool.uv]
+default-groups = ["dev", "kronos"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
