@@ -13,8 +13,9 @@ REPO_ROOT = PIPELINE_DIR.parent
 # 資料涵蓋的起點（PLAN.md 1.1）
 COVERAGE_START = date(2020, 1, 1)
 
-# 輸出資料的總大小預算（PLAN.md 第 8 節）
-EXPORT_BUDGET_BYTES = 200 * 1024 * 1024
+# 輸出資料的總大小預算（PLAN.md 第 8 節）。2026-11-13 加入上櫃（約 900 檔）後為 218 MB，
+# 由 200 MB 調高到 300 MB；GitHub Pages 網站上限是 1 GB，單一檔案遠小於 GitHub 的 100 MB 限制
+EXPORT_BUDGET_BYTES = 300 * 1024 * 1024
 
 
 def _load_dotenv(path: Path) -> None:
