@@ -24,7 +24,7 @@
 
 ### 仍需先問使用者的事
 
-花錢的事（包括使用 Anthropic API）、新增 GitHub Secrets、刪除遠端資料、PLAN.md 標明「先問使用者」的關卡（Phase 2 設計確認、Phase 5 LLM 費用、Phase 6 的 3D 地球）。遇到時寫 `.work/WAITING_FOR_USER.md` 後停止。
+花錢的事（包括使用 Anthropic API）、新增 GitHub Secrets、刪除遠端資料。遇到時寫 `.work/WAITING_FOR_USER.md` 後停止。PLAN.md 的「先問使用者」關卡都已決定（2026-11-13）：設計定案、新聞用 GDELT 最近三個月、3D 地球做隔夜傳導＋全球供應鏈、不做 LLM 抽取（沒有 API 金鑰）、約每季更新一次。
 
 ## 環境
 
@@ -78,7 +78,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\refresh_publish.ps1 
 
 - 背景工作：`ingest flows`、`ingest mops`、`backtest`。用 `uv run python -m pipeline status` 看鎖檔；在跑就不要重啟；「已結束（殘留鎖檔）」代表中斷了，用 `scripts\start_bg.ps1` 重新啟動（會從中斷處續跑）
 - flows 與 mops 完成後執行一次 `scripts\refresh_publish.ps1`；回測完成後再執行一次
-- 新聞來源已定：**GDELT DOC 2.0、最近三個月**（2026-11-13 使用者決定），可以實作與回補：一輪抓完存起來，不重複抓（2026-11-13 上午本機被 GDELT 限流 429，要長時間退避）；**不要**開始 LLM 抽取（等使用者提供 API 金鑰並同意費用）
+- 新聞來源已定：**GDELT DOC 2.0、最近三個月**（2026-11-13 使用者決定），可以實作與回補：一輪抓完存起來，不重複抓（2026-11-13 上午本機被 GDELT 限流 429，要長時間退避）；**不做** LLM 抽取（2026-11-13 使用者沒有 API 金鑰；新聞標題用規則分類）
 - 3D 地球已完成（隔夜傳導＋全球供應鏈）；分析說明已完成（每項分析的方法／計算時間／資料期間）
 - 可以做的：Phase 4 驗收（追蹤池 z 最高的 10 天歸因結果表）、Phase 6 收尾（快捷鍵總表、程式碼分割、行動裝置）、上櫃資料（TPEx 端點需驗證）
 - 電腦會睡眠：長時間指令已用 SetThreadExecutionState 防閒置睡眠；闔上筆電仍會中斷，重新執行同一指令即可續跑
