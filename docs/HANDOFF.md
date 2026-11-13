@@ -46,7 +46,9 @@
 | Kronos 回測（`backtest`） | **已暫停**（使用者要求），1,631 / 3,672 次已存，11 / 24 個基準日 | **晚上在顯示卡電腦續跑** |
 | GDELT 新聞（`ingest news`） | 這台電腦被 GDELT 限流（429），一則都還沒抓到 | 兩台都可以試，每次最多 3 個請求 |
 
-上櫃跑完後要做：`uv run python -m pipeline check`（還原後漲跌幅的不變量檢查，上櫃的例外要查清楚）→ `scripts\refresh_publish.ps1`。
+上櫃跑完後要做：`uv run python -m pipeline check`（還原後漲跌幅的不變量檢查，上櫃的例外要查清楚）→ `moves` → `export`，**發布由使用者自己執行** `uv run python -m pipeline publish`。
+
+> 2026-11-13 起：Claude 不 push、不執行 `publish`，commit 也不加 Claude 署名；所有推送與發布都由使用者自己做。
 做完再把 `pipeline\data` 複製到顯示卡電腦（見 move-to-gpu.md）。**複製前這台不能有任何管線程式在跑。**
 
 ## 3. 晚上在顯示卡電腦上要做的事（依序）
@@ -55,8 +57,8 @@
 2. **停用舊電腦的自動接續排程**（Claude 的 `tw-stock-terminal-resume`），同一時間只讓一台電腦發布。
 3. 先在 GPU 上量速度：`uv run --no-sync python -m pipeline forecast 2330`（日誌會印出「裝置 cuda」與耗時）。
 4. 決定模型（見下一節），再跑回測：`uv run --no-sync python -m pipeline backtest`。
-5. 回測完成後：`uv run --no-sync python -m pipeline moves`（可略）→ `export` → `publish`，並如實回報整體命中率，包含表現不好的部分。
-6. 試一次 GDELT：`uv run --no-sync python -m pipeline ingest news`；抓到後 `attribution` → `export` → `publish`。
+5. 回測完成後：`uv run --no-sync python -m pipeline moves`（可略）→ `export`，如實回報整體命中率（包含表現不好的部分），再由使用者執行 `publish`。
+6. 試一次 GDELT：`uv run --no-sync python -m pipeline ingest news`；抓到後 `attribution` → `export`，再由使用者執行 `publish`。
 
 ## 4. Kronos 模型：在顯示卡上可以做的事（需要使用者決定）
 

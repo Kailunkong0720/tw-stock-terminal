@@ -21,7 +21,8 @@
 ### 已取得的使用者授權（2026-11-12）
 
 - 用 winget 安裝 Node.js、uv（已完成）
-- 在 GitHub 帳號 Kailunkong0720 建立**公開** repo `tw-stock-terminal`（MIT 授權）、push 到 `main` 與 `data` 分支、開啟 GitHub Pages、觸發部署工作流程
+- 在 GitHub 帳號 Kailunkong0720 建立**公開** repo `tw-stock-terminal`（MIT 授權）、開啟 GitHub Pages（已完成）
+- ~~push 到 `main` 與 `data` 分支、觸發部署~~：**2026-11-13 起撤回，改由使用者自己 push 與發布**
 - 自動接續：每 2 小時的排程任務
 
 ### 仍需先問使用者的事
@@ -37,7 +38,8 @@
   ```
 - 工具版本（2026-11-12）：uv 0.13.7、Node.js 26.13.1、pnpm 12.18.0、gh 2.103.3（已登入 Kailunkong0720）
 - git 身分只設在本 repo：GitHub noreply 信箱（不要改成使用者的私人信箱）
-- commit 訊息結尾加上：`Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`
+- **commit 訊息不要加任何 `Co-Authored-By` 或 Claude 署名**（2026-11-13 使用者要求：GitHub 上不要出現 Claude 共同作者）
+- **Claude 不要 push、不要執行 `publish`**（2026-11-13 起使用者自己推）：只在本機 commit、只跑到 `export`（或 `publish --no-push`），然後告訴使用者要執行的指令
 
 ## 常用指令
 

@@ -22,7 +22,6 @@ from pipeline.core.config import REPO_ROOT, Settings
 
 log = logging.getLogger(__name__)
 
-TRAILER = "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 
 class PublishError(RuntimeError):
@@ -50,7 +49,7 @@ def build_data_commit(data_dir: Path, repo_root: Path, branch: str = "data") -> 
         _git([*base, "add", "--all", "--force", "."], cwd=data_dir, env=env)
         tree = _git([*base, "write-tree"], cwd=data_dir, env=env)
 
-    message = f"data: 資料截至 {as_of}（產生於 {meta.get('generated_at')}）\n\n{TRAILER}\n"
+    message = f"data: 資料截至 {as_of}（產生於 {meta.get('generated_at')}）\n"
     commit = _git([f"--git-dir={git_dir}", "commit-tree", tree, "-m", message], cwd=repo_root)
     _git([f"--git-dir={git_dir}", "update-ref", f"refs/heads/{branch}", commit], cwd=repo_root)
     return commit
