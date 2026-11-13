@@ -60,6 +60,20 @@ pnpm gen:types    # schema.json → src/lib/contract/types.ts
 pnpm build        # 型別檢查 + 打包
 ```
 
+完整更新並發布（拆解＋歸因＋建圖 → 輸出 → 推送 data 分支並觸發部署）：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\refresh_publish.ps1   # 在 pipeline/ 下
+```
+
+## 自動接續的注意事項（2026-11-13）
+
+- 背景工作：`ingest flows`、`ingest mops`、`backtest`。用 `uv run python -m pipeline status` 看鎖檔；在跑就不要重啟
+- flows 與 mops 完成後執行一次 `scripts\refresh_publish.ps1`；回測完成後再執行一次
+- **不要**開始新聞回補或 LLM 抽取：等使用者決定新聞來源與 API 金鑰（見 PLAN.md Phase 4、5 的標註）
+- 可以做的：Phase 4 驗收（追蹤池 z 最高的 10 天歸因結果表）、Phase 6 收尾（快捷鍵總表、程式碼分割、行動裝置）、上櫃資料（TPEx 端點需驗證）
+- 電腦會睡眠：長時間指令已用 SetThreadExecutionState 防閒置睡眠；闔上筆電仍會中斷，重新執行同一指令即可續跑
+
 ## 慣例與已知的坑
 
 - **Windows 系統編碼是 cp1252**：讀寫檔案一律明確指定 `encoding="utf-8"`；`alembic.ini` 只能放 ASCII；PowerShell 把中文用管線傳給 git 會變亂碼，commit 訊息先寫成 UTF-8 檔再 `git commit -F 檔案`
