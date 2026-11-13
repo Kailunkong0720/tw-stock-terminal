@@ -75,6 +75,24 @@ def _step_mops(s: Settings) -> None:
     ingest_mops(s)
 
 
+def _step_tpex(s: Settings) -> None:
+    from pipeline.ingest.tpex import ingest_tpex
+
+    ingest_tpex(s)
+
+
+def _step_tpex_actions(s: Settings) -> None:
+    from pipeline.ingest.tpex import ingest_tpex_actions
+
+    ingest_tpex_actions(s)
+
+
+def _step_tpex_flows(s: Settings) -> None:
+    from pipeline.ingest.tpex import ingest_tpex_flows
+
+    ingest_tpex_flows(s)
+
+
 def _step_news(s: Settings) -> None:
     from pipeline.ingest.news import ingest_news
 
@@ -105,6 +123,10 @@ INGEST_STEPS: dict[str, Step] = {
     "flows": _step_flows,
     "global": _step_global,
     "mops": _step_mops,
+    # 上櫃（櫃買中心）：收盤行情＋櫃買指數＋公司基本資料、公司行動、三大法人與外資持股
+    "tpex": _step_tpex,
+    "tpex-actions": _step_tpex_actions,
+    "tpex-flows": _step_tpex_flows,
     # 媒體新聞要用到大波動日（moves），所以 build/refresh 的順序裡排在 moves 之後（見 BUILD_STEPS）
     "news": _step_news,
 }
@@ -120,6 +142,9 @@ STEP_LOCKS: dict[str, str] = {
     "global": "net-yahoo",
     "mops": "net-mops",
     "news": "net-gdelt",
+    "tpex": "net-tpex",
+    "tpex-actions": "net-tpex",
+    "tpex-flows": "net-tpex",
     "forecast": "cpu",
 }
 

@@ -48,8 +48,8 @@ def sign_of(html: Any) -> int:
 
 
 def roc_date(s: str) -> date:
-    """「109年01月02日」、「109/01/20」→ date(2020, 1, 2)。"""
-    m = _ROC_RE.match(str(s))
+    """「109年01月02日」、「109/01/20」、「1090120」（櫃買中心）→ date(2020, 1, 2)。"""
+    m = _ROC_RE.match(str(s)) or re.fullmatch(r"\s*(\d{2,3})(\d{2})(\d{2})\s*", str(s))
     if not m:
         raise ValueError(f"無法解析民國日期：{s!r}")
     y, mo, d = (int(x) for x in m.groups())
@@ -76,7 +76,8 @@ def rows_as_dicts(fields: list[str], data: list[list[Any]]) -> list[dict[str, An
 
 
 def is_ok(payload: Any) -> bool:
-    return isinstance(payload, dict) and payload.get("stat") == "OK"
+    # 證交所回 "OK"，櫃買中心回小寫 "ok"
+    return isinstance(payload, dict) and str(payload.get("stat", "")).lower() == "ok"
 
 
 def is_no_data(payload: Any) -> bool:

@@ -159,7 +159,12 @@ def compute_moves(settings: Settings) -> None:
     if sox is None:
         log.warning("沒有費半資料（先執行 ingest global），隔夜美股因子以 0 計")
 
-    secs = pd.read_sql_query("SELECT symbol, industry FROM security WHERE kind = 'stock'", engine)
+    # 上櫃股票的大盤因子用櫃買報酬指數（缺的日子用櫃買指數補）；類股因子暫用上市同產業的指數
+    from pipeline.ingest.tpex import OTC_INDEX, OTC_TR_INDEX
+
+    mkt_otc = _combine(rets, [OTC_TR_INDEX, OTC_INDEX])
+    secs = pd.read_sql_query("SELECT symbol, industry, market FROM security WHERE kind = 'stock'", engine)
+    market = dict(zip(secs["symbol"], secs["market"], strict=True))
     bars = pd.read_sql_query(
         "SELECT b.symbol, b.date, b.close, b.volume FROM daily_bar b JOIN security s ON s.symbol = b.symbol "
         "WHERE s.kind = 'stock' AND b.close IS NOT NULL ORDER BY b.symbol, b.date",
@@ -203,7 +208,7 @@ def compute_moves(settings: Settings) -> None:
                     out[i] = lv[b] / lv[a] - 1
             return out
 
-        m = span_ret(mkt)
+        m = span_ret(mkt_otc if market.get(sym) == "TPEx" and mkt_otc is not None else mkt)
         sec = _sector_series(rets, industry.get(sym))
         sx = span_ret(sec) - m if sec is not None else np.zeros(len(dates))
         sx = np.where(np.isnan(sx), 0.0, sx)
