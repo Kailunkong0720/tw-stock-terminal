@@ -178,7 +178,7 @@ GET https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20201102&type=ALLB
 - 數字是帶千分位逗號的字串；漲跌符號欄位包在 HTML 標籤裡；日期是民國年
 - 證交所另有 OpenAPI（`https://openapi.twse.com.tw/v1/`，已驗證），`/exchangeReport/STOCK_DAY_ALL` 提供最新一個交易日的全市場行情，適合 `refresh` 使用
 
-**上櫃**：TPEx 網站近年改版，端點**需驗證**。先查 `https://www.tpex.org.tw/openapi/` 的 swagger。上市做完並通過驗收後再做上櫃。
+**上櫃**（2026-11-13 已驗證）：`POST https://www.tpex.org.tw/www/zh-tw/afterTrading/otc`，**表單**參數（不是 JSON）`date=2020/01/02&type=EW&response=json`。回應 `stat` 是小寫 `ok`，`tables[0]` 為「上櫃股票每日收盤行情(不含定價)」（2020-01-02 共 876 檔）。欄位名稱帶前後空白（如 `"收盤 "`、`" 成交金額(元)"`），要先 strip；「漲跌」已帶正負號；另有「發行股數」，可直接算市值。HttpClient 需要加上表單 POST。上櫃的法人買賣超與除權息報表端點仍**需驗證**。
 
 **大盤與類股指數**：加權指數與各產業類股指數的日線（因子模型要用）。**需驗證**端點。
 
