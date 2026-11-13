@@ -257,11 +257,12 @@ def attribute(settings: Settings) -> None:
                 if e.type in EXCLUDED_TYPES:
                     continue
                 c = {
-                    "relevance": 1.0,
+                    # 媒體報導是以公司名稱比對標題找到的，相關性比本公司自己的公告低
+                    "relevance": 1.0 if e.level == "official" else 0.8,
                     "prior": priors.get(e.type, 0.3),
                     "direction": direction_score(e.direction, m.idio),
                     "proximity": PROXIMITY[lag],
-                    "credibility": CREDIBILITY["official"],
+                    "credibility": CREDIBILITY.get(e.level, 0.7),
                 }
                 cands.append((score(c), e.id, c))
             if lag == 0:

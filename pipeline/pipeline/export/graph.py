@@ -194,15 +194,15 @@ def export_graph(engine: Engine, writer: ExportWriter, calendar_end) -> None:  #
                         date=m.date,
                     )
                 )
-                if c.level == "official":
+                if c.level in ("official", "media"):
                     links.append(
                         GraphLink(
                             source=cid,
                             target=eid,
                             rel="involves",
-                            rel_name="公告",
+                            rel_name="公告" if c.level == "official" else "報導",
                             confidence=1.0,
-                            origin="official",
+                            origin=c.level,
                             date=m.date,
                         )
                     )

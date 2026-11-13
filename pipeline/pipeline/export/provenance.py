@@ -166,6 +166,14 @@ def build_analyses(
     )
 
     a = _last_run(engine, "attribution")
+    nw = _last_run(engine, "news")
+    news = date_range(engine, "SELECT MIN(trade_date), MAX(trade_date) FROM event WHERE uid LIKE 'gdelt:%'", end)
+    n_news = pd.read_sql_query("SELECT COUNT(*) AS n FROM event WHERE uid LIKE 'gdelt:%'", engine)["n"].iloc[0]
+    news_line = (
+        f"GDELT 媒體新聞標題：{n_news:,} 則，{_fmt(news[0])} 至 {_fmt(news[1])}（只涵蓋最近三個月）"
+        if nw
+        else "媒體新聞：尚未加入（使用 GDELT，只涵蓋最近三個月）"
+    )
     mops = date_range(engine, "SELECT MIN(trade_date), MAX(trade_date) FROM event WHERE uid LIKE 'mops:%'", end)
     n_mops = pd.read_sql_query("SELECT COUNT(*) AS n FROM event WHERE uid LIKE 'mops:%'", engine)["n"].iloc[0]
     w = "＋".join(
@@ -196,7 +204,7 @@ def build_analyses(
             inputs=[
                 f"公開資訊觀測站重大訊息（追蹤池 150 家）：{n_mops:,} 則，{_fmt(mops[0])} 至 {_fmt(mops[1])}",
                 "證交所分割、面額變更、減資報表",
-                "媒體新聞：尚未加入（預定使用 GDELT，只涵蓋最近三個月）",
+                news_line,
             ],
             data_from=a["data_from"] if a else None,
             data_to=a["data_to"] if a else None,
@@ -205,6 +213,29 @@ def build_analyses(
             page="/explain",
         )
     )
+    if nw:
+        out.append(
+            AnalysisInfo(
+                id="news",
+                name="媒體新聞（GDELT）",
+                method=(
+                    "只針對追蹤池最近三個月的大波動日查詢 GDELT DOC 2.0："
+                    "以公司英文簡稱搜尋台灣媒體，時間窗是前一個交易日 13:30 到當天 13:30（台北），也就是可能影響當天股價的消息。"
+                    "只保存標題、來源網域、連結與時間，不轉載內文；標題依與重大訊息相同的規則分類，再進入事件歸因。"
+                ),
+                params=[
+                    f"查詢：{nw['params'].get('query', '')}（以公司名稱代入）",
+                    f"每次最多 {nw['params'].get('max_records', '')} 則；請求間隔 6 秒",
+                    "GDELT 只保留最近三個月，所以更早的大波動日只有官方公告與市場事件",
+                ],
+                inputs=[news_line],
+                data_from=news[0],
+                data_to=news[1],
+                run_last=nw["finished_at"],
+                summary=nw["summary"],
+                page="/explain",
+            )
+        )
 
     runs = pd.read_sql_query(
         "SELECT kind, symbol, base_date, created_at FROM forecast_run WHERE model = :m",

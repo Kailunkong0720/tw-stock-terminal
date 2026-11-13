@@ -75,6 +75,12 @@ def _step_mops(s: Settings) -> None:
     ingest_mops(s)
 
 
+def _step_news(s: Settings) -> None:
+    from pipeline.ingest.news import ingest_news
+
+    ingest_news(s)
+
+
 def _step_moves(s: Settings) -> None:
     from pipeline.events.attribution import attribute
     from pipeline.events.factor_model import compute_moves
@@ -85,6 +91,12 @@ def _step_moves(s: Settings) -> None:
     build_graph(s)
 
 
+def _step_attribution(s: Settings) -> None:
+    from pipeline.events.attribution import attribute
+
+    attribute(s)
+
+
 # 會對外發請求的步驟，依序執行。
 INGEST_STEPS: dict[str, Step] = {
     "daily": _step_daily,
@@ -93,6 +105,8 @@ INGEST_STEPS: dict[str, Step] = {
     "flows": _step_flows,
     "global": _step_global,
     "mops": _step_mops,
+    # 媒體新聞要用到大波動日（moves），所以 build/refresh 的順序裡排在 moves 之後（見 BUILD_STEPS）
+    "news": _step_news,
 }
 
 # 每個步驟執行時持有的鎖。「net」保證同一時間只有一個程序在對證交所發請求
@@ -105,6 +119,7 @@ STEP_LOCKS: dict[str, str] = {
     "flows": "net",
     "global": "net-yahoo",
     "mops": "net-mops",
+    "news": "net-gdelt",
     "forecast": "cpu",
 }
 
@@ -117,8 +132,11 @@ def _step_forecast(s: Settings) -> None:
 
 BUILD_STEPS: list[tuple[str, Step]] = [
     ("migrate", _step_migrate),
-    *INGEST_STEPS.items(),
+    *((k, v) for k, v in INGEST_STEPS.items() if k != "news"),
     ("moves", _step_moves),
+    # 新聞查的是大波動日，所以在 moves 之後；查完再重算一次歸因，讓新聞進入候選事件
+    ("news", _step_news),
+    ("attribution", _step_attribution),
     ("forecast", _step_forecast),
     ("export", _step_export),
 ]
