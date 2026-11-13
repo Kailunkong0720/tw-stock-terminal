@@ -6,6 +6,19 @@
 
 > **非即時資料，僅供研究，不構成投資建議。** 本站與臺灣證券交易所無任何關係，資料可能有誤，請以官方公告為準。
 
+## 功能
+
+| 頁面 | 內容 |
+|---|---|
+| 市場 | 市值前 300 大的熱力圖（可播放 2020 年至今、切換漲跌／累積報酬／外資配色）、類股表現、加權指數、追蹤池近期大波動 |
+| 個股 | K 線（還原／原始、均線、公司行動與大波動標記、Kronos 預測錐、回測重播）、價量分布、外資動向、事件時間軸與單日漲跌解析 |
+| 資金流向 | 全市場法人買賣超與加權指數、產業 × 月份的外資淨流入、當日外資買賣超排行 |
+| 模型 | 追蹤池的 Kronos 訊號排行、模型整體回測命中率與基準比較 |
+| 漲跌解析 | 個股特有波動最大的日子、市場事件；單日拆解（大盤／類股／隔夜美股／個股特有）與可能相關的事件 |
+| 知識圖譜 | 公司、產業、題材、海外公司、市場指標與事件的關係圖；大波動的解釋路徑；傳導預覽 |
+
+快捷鍵：`Ctrl+K` 搜尋、`1`–`6` 切換區間、`A` 切換還原、`↑↓` 切換自選、`?` 快捷鍵表。
+
 ## 架構
 
 ```
@@ -27,9 +40,11 @@ pipeline：抓資料 → 計算 → 輸出 JSON ──push──► data 分支�
 
 ```bash
 cd pipeline
-uv run python -m pipeline refresh   # 補上次之後的新資料
+uv run python -m pipeline refresh   # 補上次之後的新資料，並重算拆解、歸因、圖譜、最新預測、輸出
 uv run python -m pipeline publish   # 推到 data 分支並觸發部署
 ```
+
+個別步驟：`ingest daily|actions|company|flows|global|mops`、`moves`、`forecast`、`backtest`、`export`、`check`（資料品質檢查）、`status`。
 
 第一次建置用 `uv run python -m pipeline build`（歷史回補需要數小時，可以中斷後重跑，會從中斷處繼續）。
 
@@ -53,8 +68,15 @@ cd ../site && pnpm gen:types
 ## 資料來源
 
 - [臺灣證券交易所](https://www.twse.com.tw/)：每日收盤行情、三大法人買賣超、外資持股、除權除息
-- [臺灣證券交易所 OpenAPI](https://openapi.twse.com.tw/)：上市公司基本資料、重大訊息
+- [臺灣證券交易所 OpenAPI](https://openapi.twse.com.tw/)：上市公司基本資料
+- [公開資訊觀測站](https://mops.twse.com.tw/)：歷史重大訊息
+- Yahoo Finance：海外指數與匯率（只用於計算，不輸出原始序列）
 - 新聞只顯示標題、來源與連結，連回原站
+
+## 第三方元件
+
+- [Kronos](https://github.com/shiyu-coder/Kronos)（MIT）：K 線基礎模型，程式碼在 `pipeline/vendor/kronos/`
+- [TradingView Lightweight Charts™](https://www.tradingview.com/lightweight-charts/)（Apache-2.0）：K 線圖
 
 ## 授權
 
