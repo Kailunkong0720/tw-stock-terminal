@@ -45,9 +45,7 @@ def test_every_split_has_an_event(settings):
     assert build_action_events(settings) == 3
     assert build_action_events(settings) == 3  # 重跑不重複
     with session_scope(settings) as s:
-        evs = {
-            (e.symbol, e.trade_date): (e.type, e.level, e.title) for e in s.execute(select(Event)).scalars()
-        }
+        evs = {(e.symbol, e.trade_date): (e.type, e.level, e.title) for e in s.execute(select(Event)).scalars()}
     assert len(evs) == 3
     type_, level, title = evs[("0050", date(2025, 6, 18))]
     assert type_ == "split" and level == "official" and "1 拆 4" in title
