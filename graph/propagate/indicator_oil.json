@@ -1,0 +1,1 @@
+{"node":{"id":"indicator:oil","type":"indicator","name":"國際油價","attrs":{"aliases":"油價、原油"}},"items":[{"symbol":"1301","name":"台塑","via":"台塑 連動 國際油價","rho":null},{"symbol":"1303","name":"南亞","via":"南亞 連動 國際油價","rho":null},{"symbol":"1326","name":"台化","via":"台化 連動 國際油價","rho":null},{"symbol":"6505","name":"台塑化","via":"台塑化 連動 國際油價","rho":null}]}

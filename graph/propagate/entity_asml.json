@@ -1,0 +1,1 @@
+{"node":{"id":"entity:asml","type":"global_company","name":"艾司摩爾","attrs":{"lat":51.408,"lng":5.413,"place":"荷蘭費爾德霍溫","aliases":"ASML"}},"items":[{"symbol":"2330","name":"台積電","via":"艾司摩爾 供應給 台積電","rho":null}]}

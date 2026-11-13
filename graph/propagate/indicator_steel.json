@@ -1,0 +1,1 @@
+{"node":{"id":"indicator:steel","type":"indicator","name":"鋼價","attrs":{"aliases":"鋼鐵價格"}},"items":[{"symbol":"2002","name":"中鋼","via":"中鋼 連動 鋼價","rho":null}]}
