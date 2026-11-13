@@ -47,7 +47,7 @@ cd pipeline
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\quarterly_update.ps1
 ```
 
-依序：補行情、公司行動、法人、海外指數、重大訊息 → 漲跌拆解、事件歸因、知識圖譜 → Kronos 最新預測 → 回測（只算新增的基準日）→ 輸出 → 推送並觸發部署。
+依序：補行情、公司行動、法人、海外指數、重大訊息 → 漲跌拆解、事件歸因、知識圖譜 → 最近三個月大波動日的媒體新聞（GDELT）並重算歸因 → Kronos 最新預測 → 回測（只算新增的基準日）→ 輸出 → 推送並觸發部署。
 加 `-NoPush` 只建本機 commit、`-SkipBacktest` 跳過回測。每項分析的執行時間與資料期間會自動記錄，顯示在網站「關於 → 分析說明」。
 
 GDELT 新聞只保留最近三個月，兩次更新的間隔最好不要超過三個月。
@@ -60,7 +60,7 @@ uv run python -m pipeline refresh   # 補上次之後的新資料，並重算拆
 uv run python -m pipeline publish   # 推到 data 分支並觸發部署
 ```
 
-個別步驟：`ingest daily|actions|company|flows|global|mops`、`moves`、`forecast`、`backtest`、`export`、`check`（資料品質檢查）、`status`。
+個別步驟：`ingest daily|actions|company|flows|global|mops|news`、`moves`、`attribution`、`forecast`、`backtest`、`export`、`check`（資料品質檢查）、`status`。
 
 第一次建置用 `uv run python -m pipeline build`（歷史回補需要數小時，可以中斷後重跑，會從中斷處繼續）。
 
@@ -87,7 +87,7 @@ cd ../site && pnpm gen:types
 - [臺灣證券交易所 OpenAPI](https://openapi.twse.com.tw/)：上市公司基本資料
 - [公開資訊觀測站](https://mops.twse.com.tw/)：歷史重大訊息
 - Yahoo Finance：海外指數與匯率（只用於計算，不輸出原始序列）
-- 新聞只顯示標題、來源與連結，連回原站
+- [GDELT](https://www.gdeltproject.org/)：媒體新聞（只涵蓋最近三個月）；只顯示標題、來源與連結，連回原站
 
 ## 第三方元件
 
