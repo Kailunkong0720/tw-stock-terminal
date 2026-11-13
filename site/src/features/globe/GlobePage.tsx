@@ -10,14 +10,16 @@ import { readTheme } from '../../charts/theme'
 import { EmptyState, Panel } from '../../design/Panel'
 import { Segmented } from '../../design/Segmented'
 import { GlobeCanvas, type GlobeRing } from '../../globe/GlobeCanvas'
-import { useCalendar, useGlobeOvernight, useGlobeSupply } from '../../lib/data'
+import { useBars, useCalendar, useGlobeOvernight, useGlobeSupply } from '../../lib/data'
 import { formatDate } from '../../lib/format'
 import { useUpDown } from '../../lib/prefs'
-import { OVERNIGHT_HOME, OvernightSide, type OvernightModel, useOvernight } from './overnight'
+import { toCandles } from '../../lib/series'
+import { OVERNIGHT_HOME, OvernightSide, type OvernightModel, type PickedStock, useOvernight } from './overnight'
 import { SupplySide, useSupply } from './supply'
 
 type Mode = 'overnight' | 'supply'
 const MODE_KEY = 'globe-mode'
+const PICK_KEY = 'globe-stock'
 const NO_RINGS: GlobeRing[] = []
 
 function readMode(): Mode {
@@ -116,7 +118,45 @@ export function GlobePage() {
   const on = useGlobeOvernight()
   const sp = useGlobeSupply()
   const cal = useCalendar()
-  const night = useOvernight(on.data, cal.data?.dates, theme)
+  // 隔夜傳導要看的股票（預設台積電）：弧線落在它的所在地
+  const [pick, setPickState] = useState<string>(() => {
+    try {
+      return localStorage.getItem(PICK_KEY) || '2330'
+    } catch {
+      return '2330'
+    }
+  })
+  const setPick = (s: string) => {
+    setPickState(s)
+    try {
+      localStorage.setItem(PICK_KEY, s)
+    } catch {
+      // 無痕模式等情況存不了，不影響使用
+    }
+  }
+  const bars = useBars(pick)
+  const options = useMemo(
+    () =>
+      (sp.data?.places ?? [])
+        .filter((p) => p.type === 'company' && p.tracked && p.symbol)
+        .map((p) => ({ symbol: p.symbol!, name: p.name }))
+        .sort((a, b) => a.symbol.localeCompare(b.symbol)),
+    [sp.data],
+  )
+  const stock = useMemo<PickedStock | null>(() => {
+    const place = sp.data?.places.find((p) => p.id === `company:${pick}`)
+    const dates = cal.data?.dates
+    if (!place || !bars.data || !dates || !on.data) return null
+    // 還原後的日報酬，對齊日曆（前一個交易日沒有成交就留空）
+    const close = new Map(toCandles(bars.data, dates, true).map((c) => [c.time, c.close]))
+    const ret = on.data.taiex.map((_, k) => {
+      const a = close.get(dates[on.data!.start + k - 1] ?? '')
+      const b = close.get(dates[on.data!.start + k] ?? '')
+      return a && b ? b / a - 1 : null
+    })
+    return { symbol: pick, name: place.name, lat: place.lat, lng: place.lng, place: place.place, ret }
+  }, [sp.data, pick, bars.data, cal.data, on.data])
+  const night = useOvernight(on.data, cal.data?.dates, theme, stock)
   const supply = useSupply(sp.data, theme)
 
   // 鍵盤：← → 逐日、空白鍵播放（只在隔夜傳導模式）
@@ -203,7 +243,7 @@ export function GlobePage() {
       <div className="flex min-h-0 flex-col gap-2">
         {mode === 'overnight' ? (
           on.data && cal.data ? (
-            <OvernightSide data={on.data} m={night} dates={cal.data.dates} />
+            <OvernightSide data={on.data} m={night} dates={cal.data.dates} stock={stock} options={options} onPick={setPick} />
           ) : (
             <Panel title="隔夜傳導" bodyClassName="p-3">
               <EmptyState title={on.isError ? '資料讀取失敗' : '讀取中…'} />

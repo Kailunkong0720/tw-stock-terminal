@@ -63,7 +63,15 @@ const tone = (v: number | null | undefined) => (v == null ? 'muted' : v > 0 ? 'u
 const row = (label: string, v: number | null | undefined, unit: string) =>
   `<div style="display:flex;justify-content:space-between;gap:12px"><span>${label}</span><span class="num ${tone(v)}">${fmtChange(v, unit)}</span></div>`
 
-export function useOvernight(data: GlobeOvernight | undefined, dates: string[] | undefined, t: ChartTheme) {
+/** 使用者選的股票：弧線（半導體類的美股序列）落在它的所在地，報酬與日曆對齊。 */
+export type PickedStock = { symbol: string; name: string; lat: number; lng: number; place: string; ret: (number | null)[] }
+
+export function useOvernight(
+  data: GlobeOvernight | undefined,
+  dates: string[] | undefined,
+  t: ChartTheme,
+  stock: PickedStock | null,
+) {
   const range = useMemo(() => {
     if (!data) return null
     let lo = -1
@@ -76,9 +84,13 @@ export function useOvernight(data: GlobeOvernight | undefined, dates: string[] |
     }
     return lo < 0 ? null : { lo, hi }
   }, [data])
+  const stockRet = stock?.ret ?? data?.tsmc
   const stds = useMemo(
-    () => (data ? { series: data.series.map((s) => std(s.values)), taiex: std(data.taiex), tsmc: std(data.tsmc) } : null),
-    [data],
+    () =>
+      data && stockRet
+        ? { series: data.series.map((s) => std(s.values)), taiex: std(data.taiex), stock: std(stockRet) }
+        : null,
+    [data, stockRet],
   )
   const [pos, setPos] = useState<number | null>(null)
   const [playing, setPlaying] = useState(false)
@@ -134,8 +146,12 @@ export function useOvernight(data: GlobeOvernight | undefined, dates: string[] |
 
   const layers = useMemo(() => {
     const empty = { arcs: [] as GlobeArc[], points: [] as GlobePoint[], rings: [] as GlobeRing[], tags: [] as GlobeTag[] }
-    if (!data || !stds) return empty
-    const land = data.landing as Record<string, number[]>
+    if (!data || !stds || !stockRet) return empty
+    const land: Record<string, number[]> = {
+      ...(data.landing as Record<string, number[]>),
+      ...(stock ? { tsmc: [stock.lat, stock.lng] } : {}),
+    }
+    const stockName = stock?.name ?? '台積電'
     const color = (v: number | null | undefined) => (v == null || v === 0 ? t.flat : v > 0 ? t.up : t.down)
     const arcs: GlobeArc[] = []
     const points: GlobePoint[] = []
@@ -162,7 +178,7 @@ export function useOvernight(data: GlobeOvernight | undefined, dates: string[] |
     const rings: GlobeRing[] = []
     for (const [key, arr, sd, name] of [
       ['taiex', data.taiex, stds.taiex, '加權指數'],
-      ['tsmc', data.tsmc, stds.tsmc, '台積電'],
+      ['tsmc', stockRet, stds.stock, stockName],
     ] as const) {
       const v = arr[i]
       const [lat, lng] = land[key] ?? [25, 121.5]
@@ -172,27 +188,39 @@ export function useOvernight(data: GlobeOvernight | undefined, dates: string[] |
       rings.push({ id: key, lat: lat!, lng: lng!, color: color(v), maxR: 1 + Math.min(z, 5) * 0.9, speed: 1.2 + z * 0.6, period: 900 })
     }
     const us = data.series.map((s) => row(SHORT[s.id] ?? s.name, s.values[i], s.unit)).join('')
-    const tw = row('加權指數', data.taiex[i], 'pct') + row('台積電', data.tsmc[i], 'pct')
+    const tw = row('加權指數', data.taiex[i], 'pct') + row(stockName, stockRet[i], 'pct')
     const tags: GlobeTag[] = [
       { id: 'us', lat: 47, lng: -66, html: `<div class="muted">美股前一晚</div>${us}` },
       { id: 'tw', lat: 28.5, lng: 126, html: `<div class="muted">台股 ${dates?.[data.start + i]?.slice(5) ?? ''}</div>${tw}` },
     ]
     return { arcs, points, rings, tags }
-  }, [data, stds, i, t, dates])
+  }, [data, stds, i, t, dates, stock, stockRet])
 
   return { range, i, setPos, playing, togglePlay, step, fast, setFast, ticks, shocks, layers, date: dates?.[(data?.start ?? 0) + i] }
 }
 
 export type OvernightModel = ReturnType<typeof useOvernight>
 
-export function OvernightSide({ data, m, dates }: { data: GlobeOvernight; m: OvernightModel; dates: string[] }) {
+type Props = {
+  data: GlobeOvernight
+  m: OvernightModel
+  dates: string[]
+  stock: PickedStock | null
+  options: { symbol: string; name: string }[]
+  onPick: (symbol: string) => void
+}
+
+export function OvernightSide({ data, m, dates, stock, options, onPick }: Props) {
   const i = m.i
   const sox = data.series.find((s) => s.id === 'GLOBAL:SOX')
   const adr = data.series.find((s) => s.id === 'GLOBAL:TSM_ADR')
   const nas = data.series.find((s) => s.id === 'GLOBAL:NASDAQ')
+  const name = stock?.name ?? '台積電'
+  const ret = stock?.ret ?? data.tsmc
   const fits = [
-    { x: sox, y: data.tsmc, label: '費半 → 台積電' },
-    { x: adr, y: data.tsmc, label: '台積電 ADR → 台積電' },
+    { x: sox, y: ret, label: `費半 → ${name}` },
+    { x: nas, y: ret, label: `那斯達克 → ${name}` },
+    ...(stock?.symbol === '2330' || !stock ? [{ x: adr, y: ret, label: '台積電 ADR → 台積電' }] : []),
     { x: sox, y: data.taiex, label: '費半 → 加權指數' },
     { x: nas, y: data.taiex, label: '那斯達克 → 加權指數' },
   ].map((f) => ({ ...f, r: f.x ? regress(f.x.values, f.y, i) : null }))
@@ -200,6 +228,22 @@ export function OvernightSide({ data, m, dates }: { data: GlobeOvernight; m: Ove
   return (
     <>
       <Panel title={`${formatDate(m.date, true)} 的隔夜傳導`} bodyClassName="space-y-3 p-3 text-xs">
+        <label className="flex items-center gap-2">
+          <span className="shrink-0 text-2xs text-text-3">看哪一檔</span>
+          <select
+            value={stock?.symbol ?? '2330'}
+            onChange={(e) => onPick(e.target.value)}
+            className="num min-w-0 flex-1 rounded-control border border-line bg-raised px-1.5 py-1 text-xs text-text-1"
+            aria-label="選擇股票"
+          >
+            {options.map((o) => (
+              <option key={o.symbol} value={o.symbol}>
+                {o.symbol} {o.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {stock && <p className="-mt-1.5 text-2xs text-text-3">弧線落在 {stock.place}（{name}）</p>}
         <table className="w-full">
           <thead>
             <tr className="text-2xs text-text-3">
@@ -221,7 +265,7 @@ export function OvernightSide({ data, m, dates }: { data: GlobeOvernight; m: Ove
             })}
             {[
               ['加權指數（當天）', data.taiex[i]],
-              ['台積電（當天）', data.tsmc[i]],
+              [`${name}（當天）`, ret[i]],
             ].map(([label, v]) => (
               <tr key={label as string} className="border-t border-line-strong">
                 <td className="py-1 text-text-1">{label as string}</td>
@@ -247,8 +291,8 @@ export function OvernightSide({ data, m, dates }: { data: GlobeOvernight; m: Ove
           </p>
         </div>
         <div className="flex gap-3 text-2xs">
-          <Link to="/stock/$symbol" params={{ symbol: '2330' }} className="text-accent hover:underline">
-            台積電個股終端
+          <Link to="/stock/$symbol" params={{ symbol: stock?.symbol ?? '2330' }} className="text-accent hover:underline">
+            {name}個股終端
           </Link>
           <Link to="/explain" className="text-accent hover:underline">
             漲跌解析
