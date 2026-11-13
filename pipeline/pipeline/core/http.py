@@ -56,8 +56,10 @@ class HttpClient:
         transport: httpx.BaseTransport | None = None,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
-        max_attempts: int = 5,
+        # 8 次、退避上限 120 秒：總共約 6.5 分鐘。電腦從睡眠喚醒後網路（DNS）常要 1–2 分鐘才恢復
+        max_attempts: int = 8,
         base_backoff: float = 5.0,
+        max_backoff: float = 120.0,
         timeout: float = 30.0,
     ) -> None:
         self.cache_dir = cache_dir
@@ -67,6 +69,7 @@ class HttpClient:
         self._last: dict[str, float] = {}
         self.max_attempts = max_attempts
         self.base_backoff = base_backoff
+        self.max_backoff = max_backoff
         self.stats = {"network": 0, "cache_hit": 0}
         self._client = httpx.Client(
             transport=transport,
@@ -157,7 +160,7 @@ class HttpClient:
                     raise last_error
                 log.warning("HTTP %d %s（第 %d 次）", resp.status_code, url, attempt)
             if attempt < self.max_attempts:
-                backoff = self.base_backoff * 2 ** (attempt - 1)
+                backoff = min(self.max_backoff, self.base_backoff * 2 ** (attempt - 1))
                 self._sleep(backoff + random.uniform(0, backoff * 0.2))
         raise FetchError(f"重試 {self.max_attempts} 次仍失敗：{url}") from last_error
 

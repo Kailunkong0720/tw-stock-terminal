@@ -17,7 +17,7 @@ from sqlalchemy import select
 
 from pipeline.core.config import Settings
 from pipeline.core.db import session_scope
-from pipeline.core.http import HttpClient
+from pipeline.core.http import FetchError, HttpClient
 from pipeline.ingest.common import Progress, done_keys, last_ready_date, mark, upsert
 from pipeline.ingest.parse import clean_code, is_no_data, is_ok, rows_as_dicts, to_float, to_int
 from pipeline.ingest.twse_daily import SOURCE as DAILY_SOURCE
@@ -161,27 +161,40 @@ def ingest_institutional(settings: Settings) -> None:
     log.info("法人資金流向：待抓 %d 個請求（%s ~ %s）", len(jobs), jobs[0][1], jobs[-1][1])
 
     progress = Progress("法人資金流向", len(jobs), every=50)
+    failures = 0
     with HttpClient(settings.http_cache_dir) as http:
         for src, d in jobs:
             ymd = d.strftime("%Y%m%d")
-            if src == SRC_T86:
-                payload, parser, model = (
-                    _fetch(http, "T86", {"date": ymd, "selectType": "ALLBUT0999"}),
-                    parse_t86,
-                    InstitutionalFlow,
-                )
-            elif src == SRC_BFI:
-                payload, parser, model = (
-                    _fetch(http, "BFI82U", {"type": "day", "dayDate": ymd}),
-                    parse_bfi82u,
-                    MarketFlow,
-                )
-            else:
-                payload, parser, model = (
-                    _fetch(http, "MI_QFIIS", {"date": ymd, "selectType": "ALLBUT0999"}),
-                    parse_mi_qfiis,
-                    ForeignHolding,
-                )
+            try:
+                if src == SRC_T86:
+                    payload, parser, model = (
+                        _fetch(http, "T86", {"date": ymd, "selectType": "ALLBUT0999"}),
+                        parse_t86,
+                        InstitutionalFlow,
+                    )
+                elif src == SRC_BFI:
+                    payload, parser, model = (
+                        _fetch(http, "BFI82U", {"type": "day", "dayDate": ymd}),
+                        parse_bfi82u,
+                        MarketFlow,
+                    )
+                else:
+                    payload, parser, model = (
+                        _fetch(http, "MI_QFIIS", {"date": ymd, "selectType": "ALLBUT0999"}),
+                        parse_mi_qfiis,
+                        ForeignHolding,
+                    )
+            except FetchError as e:
+                # 單筆失敗不中斷整個回補；記為 error，下次執行會重試。連續失敗太多代表網路或來源有問題，停下來
+                failures += 1
+                with session_scope(settings) as s:
+                    mark(s, src, d.isoformat(), "error", note=str(e)[:200])
+                log.warning("%s %s 抓取失敗（連續第 %d 次），略過：%s", src, d, failures, e)
+                if failures >= 5:
+                    raise
+                progress.tick()
+                continue
+            failures = 0
             with session_scope(settings) as s:
                 if is_ok(payload):
                     rows = parser(payload, d)

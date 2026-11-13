@@ -9,6 +9,7 @@
   來源可信度 0.10：官方公告 1.0、市場資料 0.9、媒體 0.7
 
 UI 用語是「可能相關的事件」，不是「原因」。分數低於門檻的不列出；都沒有就如實顯示「未找到」。
+例行公告（取得固定收益證券、背書保證等）不列為候選。
 另外產生資料驅動的市場事件：前一晚費半、當天加權指數的大幅波動。
 """
 
@@ -38,7 +39,9 @@ log = logging.getLogger(__name__)
 WEIGHTS = {"relevance": 0.35, "prior": 0.25, "direction": 0.15, "proximity": 0.15, "credibility": 0.10}
 PROXIMITY = {0: 1.0, 1: 0.45, 2: 0.2}
 CREDIBILITY = {"official": 1.0, "market": 0.9, "media": 0.7}
-MIN_SCORE = 0.45
+# 本公司當天的公告一定過門檻（0.675 起）；前一天、前兩天的公告要該類型有一定先驗才會列出
+MIN_SCORE = 0.6
+EXCLUDED_TYPES = {"routine"}
 TOP_N = 5
 SOX_BIG = 0.03
 TAIEX_BIG = 0.025
@@ -176,6 +179,8 @@ def attribute(settings: Settings) -> None:
                 continue
             d = calendar[i - lag]
             for e in by_sym_day.get((m.symbol, d), []):
+                if e.type in EXCLUDED_TYPES:
+                    continue
                 c = {
                     "relevance": 1.0,
                     "prior": priors.get(e.type, 0.3),

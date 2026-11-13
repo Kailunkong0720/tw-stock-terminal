@@ -6,9 +6,10 @@ import { KLineChart, type SubPane } from '../../charts/KLineChart'
 import { VolumeProfile } from '../../charts/VolumeProfile'
 import { EmptyState, Panel } from '../../design/Panel'
 import { Segmented } from '../../design/Segmented'
-import { useBacktest, useBars, useCalendar, useFlows, useForecast, useSecurities } from '../../lib/data'
+import { useBacktest, useBars, useCalendar, useFlows, useForecast, useMoves, useSecurities } from '../../lib/data'
+import { MoveTimeline } from '../explain/MoveTimeline'
 import { toCandles, toFlowPoints } from '../../lib/series'
-import { RANGES, type RangeKey, usePrefs } from '../../lib/store'
+import { RANGES, type RangeKey, usePrefs, useView } from '../../lib/store'
 import { useMedia } from '../../lib/useMedia'
 import { coneFromBacktest, coneFromForecast } from '../forecast/cones'
 import { ModelPanel } from '../forecast/ModelPanel'
@@ -48,7 +49,16 @@ export function StockPage() {
   const setSubPane = usePrefs((s) => s.setSubPane)
   const pushRecent = usePrefs((s) => s.pushRecent)
   const watchlist = usePrefs((s) => s.watchlist)
-  const [bottomTab, setBottomTab] = useState<'actions' | 'flows'>('actions')
+  const [bottomTab, setBottomTab] = useState<'moves' | 'actions' | 'flows'>('moves')
+  const mv = useMoves(symbol)
+  const selectedMove = useView((s) => s.selectedMove)
+  const moveMarks = useMemo(() => (mv.data?.moves ?? []).map((m) => ({ date: m.date, ret: m.ret })), [mv.data])
+  useEffect(() => {
+    useView.getState().selectMove(null)
+  }, [symbol])
+  useEffect(() => {
+    if (selectedMove) setBottomTab('moves')
+  }, [selectedMove])
   const wide = useMedia('(min-width: 1280px)')
 
   const sec = secs.data?.items.find((s) => s.symbol === symbol)
@@ -202,6 +212,7 @@ export function StockPage() {
               etf={etf}
               cone={cone}
               window={replayWindow}
+              moves={replay ? [] : moveMarks}
             />
           </div>
           {replay && btPoints.length > 0 && (
@@ -240,7 +251,7 @@ export function StockPage() {
   )
   const moves = (
     <Panel title="大波動日" className="h-full">
-      {adj.length ? <BigMoves candles={adj} etf={etf} adjusted /> : loading}
+      {adj.length ? <BigMoves candles={adj} etf={etf} adjusted moves={mv.data?.moves} /> : loading}
     </Panel>
   )
   const flowPanel = (
@@ -275,8 +286,9 @@ export function StockPage() {
           size="xs"
           label="明細"
           value={bottomTab}
-          onChange={(v) => setBottomTab(v as 'actions' | 'flows')}
+          onChange={(v) => setBottomTab(v as 'moves' | 'actions' | 'flows')}
           options={[
+            { value: 'moves', label: '事件時間軸' },
             { value: 'actions', label: '除權息與分割' },
             { value: 'flows', label: '法人每日買賣超' },
           ]}
@@ -285,7 +297,13 @@ export function StockPage() {
       className="h-full"
       bodyClassName="overflow-auto"
     >
-      {bottomTab === 'actions' ? <ActionsTable actions={bars.data?.actions ?? []} /> : <FlowTable points={points} />}
+      {bottomTab === 'moves' ? (
+        <MoveTimeline data={mv.data} symbol={symbol} />
+      ) : bottomTab === 'actions' ? (
+        <ActionsTable actions={bars.data?.actions ?? []} />
+      ) : (
+        <FlowTable points={points} />
+      )}
     </Panel>
   )
 

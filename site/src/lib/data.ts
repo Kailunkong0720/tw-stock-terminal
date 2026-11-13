@@ -5,13 +5,16 @@ import type {
   Backtest,
   Bars,
   Calendar,
+  Events,
   Flows,
   Forecast,
   MarketFlows,
   Meta,
+  Moves,
   Overview,
   Ranking,
   Securities,
+  Timeline,
 } from './contract/types'
 
 /** 網站預期的資料契約版本（由 pipeline 產生的 schema 決定，單一來源）。 */
@@ -89,3 +92,8 @@ export const useForecast = (symbol: string, enabled = true) =>
   useDataFile<Forecast>(enabled ? `forecast/${symbol}.json` : null, ['forecast', symbol])
 export const useBacktest = (symbol: string, enabled = true) =>
   useDataFile<Backtest>(enabled ? `forecast/backtest/${symbol}.json` : null, ['backtest', symbol])
+/** 沒有異常波動日的股票沒有這個檔（404 不重試）。 */
+export const useMoves = (symbol: string) => useDataFile<Moves>(`moves/${symbol}.json`, ['moves', symbol])
+export const useEvents = (symbol: string, enabled = true) =>
+  useDataFile<Events>(enabled ? `events/${symbol}.json` : null, ['events', symbol])
+export const useTimeline = () => useDataFile<Timeline>('events/timeline.json', ['timeline'])

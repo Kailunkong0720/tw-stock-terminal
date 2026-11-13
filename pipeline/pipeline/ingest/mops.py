@@ -18,7 +18,7 @@ from sqlalchemy.dialects.sqlite import insert
 
 from pipeline.core.config import COVERAGE_START, Settings
 from pipeline.core.db import get_engine, session_scope
-from pipeline.core.http import HttpClient
+from pipeline.core.http import FetchError, HttpClient
 from pipeline.events.classify import classify
 from pipeline.ingest.common import Progress, done_keys, last_ready_date, mark
 from pipeline.ingest.parse import clean_code, roc_date
@@ -105,11 +105,24 @@ def ingest_mops(settings: Settings, symbols: list[str] | None = None) -> None:
     log.info("歷史重大訊息：待抓 %d 個（%d 檔 × %d 年）", len(jobs), len(symbols), len(years))
     prog = Progress("歷史重大訊息", len(jobs), every=50)
     with HttpClient(settings.http_cache_dir) as http:
+        failures = 0
         for sym, y in jobs:
             body = {"companyId": sym, "year": str(y - 1911), "month": "all", "firstDay": "", "lastDay": ""}
-            payload = http.get_json(
-                URL, json_body=body, use_cache=y != end.year, should_cache=lambda p: p.get("code") == 200
-            )
+            try:
+                payload = http.get_json(
+                    URL, json_body=body, use_cache=y != end.year, should_cache=lambda p: p.get("code") == 200
+                )
+            except FetchError as e:
+                # 單筆失敗不中斷；記為 error，下次重試。連續失敗太多代表網路或來源有問題，停下來
+                failures += 1
+                with session_scope(settings) as s:
+                    mark(s, SOURCE, f"{sym}:{y}", "error", note=str(e)[:200])
+                log.warning("%s %d 抓取失敗（連續第 %d 次）：%s", sym, y, failures, e)
+                if failures >= 5:
+                    raise
+                prog.tick()
+                continue
+            failures = 0
             with session_scope(settings) as s:
                 if payload.get("code") == 200:
                     rows = parse_t05st01(payload, calendar)

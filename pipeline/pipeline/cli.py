@@ -254,6 +254,17 @@ def main(argv: list[str] | None = None) -> int:
     settings = get_settings()
     _setup_logging(settings, args.verbose)
 
+    # 長時間的指令執行期間避免系統閒置睡眠（只在本程序執行期間有效）
+    from contextlib import nullcontext
+
+    from pipeline.core.power import keep_awake
+
+    long_running = args.cmd in ("build", "refresh", "ingest", "forecast", "backtest", "moves", "export")
+    with keep_awake() if long_running else nullcontext():
+        return _dispatch(args, settings)
+
+
+def _dispatch(args: argparse.Namespace, settings: Settings) -> int:
     try:
         if args.cmd == "build":
             _run_steps(settings, "build", BUILD_STEPS)

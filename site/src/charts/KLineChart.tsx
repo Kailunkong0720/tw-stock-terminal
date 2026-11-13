@@ -37,6 +37,8 @@ type Props = {
   cone?: ConeData | null
   /** 指定可視區間（回測重播用）；設定時忽略 range */
   window?: { from: string; to: string } | null
+  /** 異常波動日：在 K 線上標記，點擊選取 */
+  moves?: { date: string; ret: number }[]
 }
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -54,7 +56,18 @@ const MA = [5, 20, 60] as const
 
 type Legend = { c: Candle; prev: Candle | null; ma: (number | null)[]; flow: FlowPoint | null; cum: number | null }
 
-export function KLineChart({ candles, actions, flows, subPane, range, adjusted, etf, cone = null, window: win = null }: Props) {
+export function KLineChart({
+  candles,
+  actions,
+  flows,
+  subPane,
+  range,
+  adjusted,
+  etf,
+  cone = null,
+  window: win = null,
+  moves = [],
+}: Props) {
   const box = useRef<HTMLDivElement>(null)
   const chart = useRef<IChartApi | null>(null)
   const candle = useRef<ISeriesApi<'Candlestick'> | null>(null)
@@ -192,9 +205,31 @@ export function KLineChart({ candles, actions, flows, subPane, range, adjusted, 
           : { time: c.time as Time, position: 'belowBar', shape: 'circle', color: t.text3, size: 0.35 },
       )
     }
+    // 異常波動日：上漲在 K 線下方畫向上箭頭、下跌在上方畫向下箭頭
+    for (const m of moves) {
+      if (!byTime.has(m.date)) continue
+      ms.push(
+        m.ret >= 0
+          ? { time: m.date as Time, position: 'belowBar', shape: 'arrowUp', color: t.up, size: 0.55 }
+          : { time: m.date as Time, position: 'aboveBar', shape: 'arrowDown', color: t.down, size: 0.55 },
+      )
+    }
     markers.current?.setMarkers(ms.sort((a, b) => String(a.time).localeCompare(String(b.time))))
     setLegend(legendAt(candles.length - 1))
-  }, [candles, actions, ma, byTime, updown, cone?.times])
+  }, [candles, actions, ma, byTime, updown, cone?.times, moves])
+
+  // 點擊異常波動日 → 選取（事件時間軸展開該日的解析）
+  useEffect(() => {
+    const c = chart.current
+    if (!c || moves.length === 0) return
+    const set = new Set(moves.map((m) => m.date))
+    const onClick = (p: { time?: Time }) => {
+      const t = p.time == null ? null : String(p.time)
+      if (t && set.has(t)) useView.getState().selectMove(t)
+    }
+    c.subscribeClick(onClick)
+    return () => c.unsubscribeClick(onClick)
+  }, [moves])
 
   // 預測錐：資料換了就重播一次「路徑逐條畫出 → 收斂成帶狀」的動畫
   useEffect(() => {

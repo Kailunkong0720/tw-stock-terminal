@@ -8,6 +8,7 @@ import {
 
 import { AppShell } from './app/AppShell'
 import { AboutPage } from './features/about/AboutPage'
+import { ExplainDetailPage, ExplainIndexPage } from './features/explain/ExplainPages'
 import { ForecastPage } from './features/forecast/ForecastPage'
 import { MarketPage } from './features/market/MarketPage'
 import { SectionPage } from './features/placeholder/SectionPage'
@@ -40,13 +41,8 @@ const routes = [
     ),
   }),
   createRoute({ getParentRoute: () => rootRoute, path: '/forecast', component: ForecastPage }),
-  createRoute({
-    getParentRoute: () => rootRoute,
-    path: '/explain',
-    component: () => (
-      <SectionPage title="漲跌解析" detail="把單日漲跌拆成大盤、類股、隔夜美股與個股特有四部分，並列出可能相關的事件。" />
-    ),
-  }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/explain', component: ExplainIndexPage }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/explain/$symbol/$date', component: ExplainDetailPage }),
   createRoute({
     getParentRoute: () => rootRoute,
     path: '/graph',

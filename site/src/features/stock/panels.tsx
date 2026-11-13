@@ -1,31 +1,60 @@
 import { useMemo } from 'react'
 
 import { EmptyState } from '../../design/Panel'
-import type { ActionInfo, Flows } from '../../lib/contract/types'
+import type { ActionInfo, Flows, MoveOut } from '../../lib/contract/types'
 import { formatDate, formatLots, formatPct, formatPrice, formatYi, toneClass } from '../../lib/format'
 import { type Candle, type FlowPoint, biggestMoves, sum } from '../../lib/series'
 import { useView } from '../../lib/store'
 
-/** 可視區間內單日漲跌幅最大的日子（還原後）。Phase 4 之後改為扣除大盤與類股後的異常波動。 */
-export function BigMoves({ candles, etf, adjusted }: { candles: Candle[]; etf: boolean; adjusted: boolean }) {
+/**
+ * 大波動日：有因子拆解時列出可視區間內「個股特有」波動最大的異常日（扣除大盤、類股、隔夜美股）；
+ * 沒有時退回單純的還原漲跌幅排名。
+ */
+export function BigMoves({
+  candles,
+  etf,
+  adjusted,
+  moves: anomalies,
+}: {
+  candles: Candle[]
+  etf: boolean
+  adjusted: boolean
+  moves?: MoveOut[]
+}) {
   const visible = useView((s) => s.visible)
   const hover = useView((s) => s.hoverDate)
   const focus = useView((s) => s.focus)
+  const select = useView((s) => s.selectMove)
+  const byTime = useMemo(() => new Map(candles.map((c) => [c.time, c])), [candles])
+  const residual = Boolean(anomalies && anomalies.length)
   const moves = useMemo(() => {
-    const rows = visible ? candles.filter((c) => c.time >= visible.from && c.time <= visible.to) : candles
-    return biggestMoves(rows, 14)
-  }, [candles, visible])
+    const inView = (t: string) => !visible || (t >= visible.from && t <= visible.to)
+    if (anomalies && anomalies.length) {
+      return anomalies
+        .filter((m) => inView(m.date) && m.idio != null)
+        .sort((a, b) => Math.abs(b.idio!) - Math.abs(a.idio!))
+        .slice(0, 14)
+        .map((m) => ({ time: m.date, ret: m.ret, close: byTime.get(m.date)?.close ?? 0, volume: 0, idio: m.idio }))
+    }
+    const rows = visible ? candles.filter((c) => inView(c.time)) : candles
+    return biggestMoves(rows, 14).map((m) => ({ ...m, idio: null as number | null }))
+  }, [candles, visible, anomalies, byTime])
 
-  if (moves.length === 0) return <EmptyState />
+  if (moves.length === 0) return <EmptyState title="可視區間內沒有異常波動" />
   return (
     <div className="flex h-full flex-col">
-      <p className="px-3 pb-1 pt-1.5 text-2xs text-text-3">可視區間內單日漲跌幅前 {moves.length} 名（未扣除大盤）</p>
+      <p className="px-3 pb-1 pt-1.5 text-2xs text-text-3">
+        {residual ? '可視區間內個股特有波動最大的異常日（點擊看解析）' : `可視區間內單日漲跌幅前 ${moves.length} 名（未扣除大盤）`}
+      </p>
       <ul className="min-h-0 flex-1 overflow-auto">
         {moves.map((m) => (
           <li key={m.time}>
             <button
               type="button"
-              onClick={() => focus(m.time)}
+              onClick={() => {
+                focus(m.time)
+                if (residual) select(m.time)
+              }}
               className={`grid w-full grid-cols-[auto_1fr_auto] items-center gap-2 whitespace-nowrap px-3 py-1 text-left text-xs transition-colors hover:bg-hover ${
                 hover === m.time ? 'bg-hover' : ''
               }`}

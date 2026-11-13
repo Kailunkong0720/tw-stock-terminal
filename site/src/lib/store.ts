@@ -78,6 +78,8 @@ type View = {
   focusDate: string | null
   hoverDate: string | null
   searchOpen: boolean
+  selectedMove: string | null
+  selectMove: (d: string | null) => void
   setVisible: (v: View['visible']) => void
   focus: (d: string | null) => void
   setHover: (d: string | null) => void
@@ -89,6 +91,8 @@ export const useView = create<View>()((set) => ({
   focusDate: null,
   hoverDate: null,
   searchOpen: false,
+  selectedMove: null,
+  selectMove: (selectedMove) => set({ selectedMove }),
   setVisible: (visible) => set({ visible }),
   focus: (focusDate) => set({ focusDate }),
   setHover: (hoverDate) => set({ hoverDate }),
