@@ -15,6 +15,8 @@ from pipeline.export.contract import (
     Breadth,
     Calendar,
     Flows,
+    HeatItem,
+    Heatmap,
     IndexSeries,
     IndustryFlows,
     IndustryFlowSeries,
@@ -315,6 +317,96 @@ class MarketExporter:
             Overview(taiex=taiex, sectors=uniq, breadth=Breadth(start=bstart, up=up, down=down, flat=flat)),
         )
 
+    # ── 市值熱力圖 ──────────────────────────────────────────────────────
+    HEATMAP_SIZE = 300
+
+    def export_heatmap(self) -> None:
+        from pipeline.analytics.adjust import Action, cumulative_factors
+
+        last = self.calendar[-1]
+        cap = self.q(
+            "SELECT h.symbol, h.shares_issued, s.name, s.industry FROM foreign_holding h "
+            "JOIN (SELECT symbol, MAX(date) AS d FROM foreign_holding WHERE date <= :end GROUP BY symbol) m "
+            "  ON m.symbol = h.symbol AND m.d = h.date "
+            "JOIN security s ON s.symbol = h.symbol AND s.kind = 'stock' AND s.industry IS NOT NULL",
+            end=last.isoformat(),
+        )
+        if cap.empty:
+            log.info("尚無發行股數資料（外資持股），略過熱力圖")
+            return
+        bars = self.q(
+            "SELECT symbol, date, close, change FROM daily_bar WHERE close IS NOT NULL AND date <= :end",
+            end=last.isoformat(),
+        )
+        bars["date"] = pd.to_datetime(bars["date"]).dt.date
+        latest = bars.sort_values("date").groupby("symbol").tail(1).set_index("symbol")
+        cap = cap[cap["symbol"].isin(latest.index)].copy()
+        cap["cap"] = cap.apply(lambda r: r.shares_issued * latest.loc[r.symbol, "close"] / 1e8, axis=1)
+        top = cap.sort_values("cap", ascending=False).head(self.HEATMAP_SIZE)
+        syms = list(top["symbol"])
+
+        acts = self.q("SELECT symbol, ex_date, factor, affects_shares FROM corporate_action")
+        acts["ex_date"] = pd.to_datetime(acts["ex_date"]).dt.date
+        acts_by = {
+            s: [Action(r.ex_date, r.factor, bool(r.affects_shares)) for r in g.itertuples()]
+            for s, g in acts.groupby("symbol")
+        }
+        weeks = weekly_last_days(self.calendar)
+        week_idx = {d: i for i, d in enumerate(weeks)}
+
+        flows = self.q(
+            "SELECT f.symbol, f.date, f.foreign_net * b.close / 1e8 AS v FROM institutional_flow f "
+            "JOIN daily_bar b ON b.symbol = f.symbol AND b.date = f.date WHERE f.date <= :end",
+            end=last.isoformat(),
+        )
+        flows["date"] = pd.to_datetime(flows["date"]).dt.date
+
+        ret = [[None] * len(syms) for _ in weeks]
+        foreign = [[None] * len(syms) for _ in weeks]
+        ret_1d: list[float | None] = []
+        foreign_1d: list[float | None] = []
+        by_sym = {s: g.set_index("date") for s, g in bars[bars["symbol"].isin(syms)].groupby("symbol")}
+        fl_by = {s: g for s, g in flows[flows["symbol"].isin(syms)].groupby("symbol")}
+        for j, sym in enumerate(syms):
+            g = by_sym[sym]
+            dates = list(g.index)
+            adj = pd.Series(g["close"].to_numpy() * cumulative_factors(dates, acts_by.get(sym, [])), index=dates)
+            # 每週最後一個交易日的還原收盤；那天沒成交的週略過（報酬併入下一個有成交的週）
+            wk = adj[adj.index.isin(week_idx)]
+            prev = None
+            for d, v in wk.items():
+                if prev is not None:
+                    ret[week_idx[d]][j] = round((v / prev - 1) * 100, 2)
+                prev = v
+            row = g.iloc[-1]
+            chg = row["change"]
+            ret_1d.append(
+                None
+                if g.index[-1] != last or chg is None or pd.isna(chg)
+                else round(chg / (row["close"] - chg) * 100, 2)
+            )
+            fl = fl_by.get(sym)
+            if fl is not None:
+                fl = fl.copy()
+                fl["week"] = [weeks[min(len(weeks) - 1, _week_of(week_idx, weeks, d))] for d in fl["date"]]
+                for w, v in fl.groupby("week")["v"].sum().items():
+                    foreign[week_idx[w]][j] = round(float(v), 2)
+                today = fl[fl["date"] == last]["v"]
+                foreign_1d.append(round(float(today.iloc[0]), 2) if len(today) else None)
+            else:
+                foreign_1d.append(None)
+
+        items = [
+            HeatItem(symbol=r.symbol, name=r.name, industry=r.industry, cap=round(float(r.cap), 1))
+            for r in top.itertuples()
+        ]
+        self.w.write(
+            "market/heatmap.json",
+            Heatmap(
+                as_of=last, items=items, ret_1d=ret_1d, foreign_1d=foreign_1d, weeks=weeks, ret=ret, foreign=foreign
+            ),
+        )
+
     def run(self) -> None:
         if not self.export_calendar():
             log.warning("尚無日線資料，略過市場資料輸出")
@@ -327,6 +419,14 @@ class MarketExporter:
         self.export_market_flows()
         self.export_industry_flows()
         self.export_overview()
+        self.export_heatmap()
+
+
+def _week_of(week_idx: dict[date, int], weeks: list[date], d: date) -> int:
+    """日期 d 所屬的週（該週最後一個交易日）在 weeks 中的索引。"""
+    import bisect
+
+    return bisect.bisect_left(weeks, d)
 
 
 def source_status(engine: Engine) -> dict[str, tuple[str | None, int, int]]:

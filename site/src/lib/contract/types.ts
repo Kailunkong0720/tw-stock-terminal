@@ -21,6 +21,7 @@ export interface Contract {
   MarketFlows?: MarketFlows;
   IndustryFlows?: IndustryFlows;
   Overview?: Overview;
+  Heatmap?: Heatmap;
 }
 /**
  * data/graph/core.json：種子圖與由資料算出的靜態關係。
@@ -625,4 +626,42 @@ export interface Breadth {
   up: number[];
   down: number[];
   flat: number[];
+}
+/**
+ * data/market/heatmap.json：市值前幾大上市股票的熱力圖。
+ *
+ * 版面以最新市值固定，播放時只有顏色變化。ret 與 foreign 的第一維是週、第二維與 items 對齊。
+ */
+export interface Heatmap {
+  as_of: string;
+  items: HeatItem[];
+  /**
+   * 資料截止日的漲跌幅（%）
+   */
+  ret_1d: (number | null)[];
+  /**
+   * 資料截止日的外資估算買賣超（億元）
+   */
+  foreign_1d: (number | null)[];
+  /**
+   * 每週最後一個交易日
+   */
+  weeks: string[];
+  /**
+   * 各週還原報酬（%）
+   */
+  ret: (number | null)[][];
+  /**
+   * 各週外資估算買賣超（億元）
+   */
+  foreign: (number | null)[][];
+}
+export interface HeatItem {
+  symbol: string;
+  name: string;
+  industry: string;
+  /**
+   * 市值（億元）＝最新收盤 × 發行股數
+   */
+  cap: number;
 }

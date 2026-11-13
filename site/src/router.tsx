@@ -9,10 +9,10 @@ import {
 import { AppShell } from './app/AppShell'
 import { AboutPage } from './features/about/AboutPage'
 import { ExplainDetailPage, ExplainIndexPage } from './features/explain/ExplainPages'
+import { FlowsPage } from './features/flows/FlowsPage'
 import { ForecastPage } from './features/forecast/ForecastPage'
 import { GraphPage } from './features/graph/GraphPage'
 import { MarketPage } from './features/market/MarketPage'
-import { SectionPage } from './features/placeholder/SectionPage'
 import { StockPage } from './features/stock/StockPage'
 
 function NotFound() {
@@ -31,16 +31,7 @@ const rootRoute = createRootRoute({ component: AppShell, notFoundComponent: NotF
 const routes = [
   createRoute({ getParentRoute: () => rootRoute, path: '/', component: MarketPage }),
   createRoute({ getParentRoute: () => rootRoute, path: '/stock/$symbol', component: StockPage }),
-  createRoute({
-    getParentRoute: () => rootRoute,
-    path: '/flows',
-    component: () => (
-      <SectionPage
-        title="資金流向"
-        detail="外資與三大法人每日買賣超：個股、產業輪動、全市場，皆可沿時間軸播放。"
-      />
-    ),
-  }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/flows', component: FlowsPage }),
   createRoute({ getParentRoute: () => rootRoute, path: '/forecast', component: ForecastPage }),
   createRoute({ getParentRoute: () => rootRoute, path: '/explain', component: ExplainIndexPage }),
   createRoute({ getParentRoute: () => rootRoute, path: '/explain/$symbol/$date', component: ExplainDetailPage }),

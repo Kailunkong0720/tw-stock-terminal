@@ -10,6 +10,8 @@ import type {
   Forecast,
   GraphEgo,
   GraphPropagate,
+  Heatmap,
+  IndustryFlows,
   MarketFlows,
   Meta,
   Moves,
@@ -85,6 +87,8 @@ function useDataFile<T>(path: string | null, key: unknown[]) {
 export const useCalendar = () => useDataFile<Calendar>('calendar.json', ['calendar'])
 export const useSecurities = () => useDataFile<Securities>('securities.json', ['securities'])
 export const useOverview = () => useDataFile<Overview>('market/overview.json', ['overview'])
+export const useHeatmap = () => useDataFile<Heatmap>('market/heatmap.json', ['heatmap'])
+export const useIndustryFlows = () => useDataFile<IndustryFlows>('flows/industry.json', ['industry-flows'])
 export const useMarketFlows = () => useDataFile<MarketFlows>('flows/market.json', ['market-flows'])
 export const useBars = (symbol: string) => useDataFile<Bars>(`bars/${symbol}.json`, ['bars', symbol])
 export const useFlows = (symbol: string) => useDataFile<Flows>(`flows/${symbol}.json`, ['flows', symbol])

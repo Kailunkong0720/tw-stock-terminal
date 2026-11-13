@@ -163,6 +163,28 @@ class Breadth(_Model):
     flat: list[int]
 
 
+class HeatItem(_Model):
+    symbol: str
+    name: str
+    industry: str
+    cap: float = Field(description="市值（億元）＝最新收盤 × 發行股數")
+
+
+class Heatmap(_Model):
+    """data/market/heatmap.json：市值前幾大上市股票的熱力圖。
+
+    版面以最新市值固定，播放時只有顏色變化。ret 與 foreign 的第一維是週、第二維與 items 對齊。
+    """
+
+    as_of: date
+    items: list[HeatItem]
+    ret_1d: list[float | None] = Field(description="資料截止日的漲跌幅（%）")
+    foreign_1d: list[float | None] = Field(description="資料截止日的外資估算買賣超（億元）")
+    weeks: list[date] = Field(description="每週最後一個交易日")
+    ret: list[list[float | None]] = Field(description="各週還原報酬（%）")
+    foreign: list[list[float | None]] = Field(description="各週外資估算買賣超（億元）")
+
+
 class Overview(_Model):
     """data/market/overview.json：大盤、類股表現、漲跌家數。"""
 
@@ -408,4 +430,5 @@ EXPORTED_MODELS: list[type[BaseModel]] = [
     MarketFlows,
     IndustryFlows,
     Overview,
+    Heatmap,
 ]

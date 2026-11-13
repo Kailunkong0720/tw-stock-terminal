@@ -55,6 +55,9 @@
     },
     "Overview": {
       "$ref": "#/$defs/Overview"
+    },
+    "Heatmap": {
+      "$ref": "#/$defs/Heatmap"
     }
   },
   "additionalProperties": false,
@@ -1906,6 +1909,129 @@
         "breadth"
       ],
       "title": "Overview",
+      "type": "object"
+    },
+    "HeatItem": {
+      "additionalProperties": false,
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "industry": {
+          "type": "string"
+        },
+        "cap": {
+          "description": "市值（億元）＝最新收盤 × 發行股數",
+          "type": "number"
+        }
+      },
+      "required": [
+        "symbol",
+        "name",
+        "industry",
+        "cap"
+      ],
+      "title": "HeatItem",
+      "type": "object"
+    },
+    "Heatmap": {
+      "additionalProperties": false,
+      "description": "data/market/heatmap.json：市值前幾大上市股票的熱力圖。\n\n版面以最新市值固定，播放時只有顏色變化。ret 與 foreign 的第一維是週、第二維與 items 對齊。",
+      "properties": {
+        "as_of": {
+          "format": "date",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/HeatItem"
+          },
+          "type": "array"
+        },
+        "ret_1d": {
+          "description": "資料截止日的漲跌幅（%）",
+          "items": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "foreign_1d": {
+          "description": "資料截止日的外資估算買賣超（億元）",
+          "items": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "weeks": {
+          "description": "每週最後一個交易日",
+          "items": {
+            "format": "date",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "ret": {
+          "description": "各週還原報酬（%）",
+          "items": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "foreign": {
+          "description": "各週外資估算買賣超（億元）",
+          "items": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "as_of",
+        "items",
+        "ret_1d",
+        "foreign_1d",
+        "weeks",
+        "ret",
+        "foreign"
+      ],
+      "title": "Heatmap",
       "type": "object"
     }
   }
