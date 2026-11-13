@@ -70,7 +70,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\refresh_publish.ps1 
 
 - 背景工作：`ingest flows`、`ingest mops`、`backtest`。用 `uv run python -m pipeline status` 看鎖檔；在跑就不要重啟；「已結束（殘留鎖檔）」代表中斷了，用 `scripts\start_bg.ps1` 重新啟動（會從中斷處續跑）
 - flows 與 mops 完成後執行一次 `scripts\refresh_publish.ps1`；回測完成後再執行一次
-- **不要**開始新聞回補或 LLM 抽取：等使用者決定新聞來源與 API 金鑰（見 PLAN.md Phase 4、5 的標註）
+- 新聞來源已定：**GDELT DOC 2.0、最近三個月**（2026-11-13 使用者決定），可以實作與回補；**不要**開始 LLM 抽取（等使用者提供 API 金鑰並同意費用）；3D 地球等使用者回覆
 - 可以做的：Phase 4 驗收（追蹤池 z 最高的 10 天歸因結果表）、Phase 6 收尾（快捷鍵總表、程式碼分割、行動裝置）、上櫃資料（TPEx 端點需驗證）
 - 電腦會睡眠：長時間指令已用 SetThreadExecutionState 防閒置睡眠；闔上筆電仍會中斷，重新執行同一指令即可續跑
 
