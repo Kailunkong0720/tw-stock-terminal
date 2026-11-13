@@ -57,6 +57,25 @@ def direction_score(event_dir: int, move: float) -> float:
     return 1.0 if (event_dir > 0) == (move > 0) else 0.2
 
 
+def market_components(event_dir: int, ret: float, common: float, idio: float) -> dict[str, float] | None:
+    """市場事件對某一天個股波動的評分項目；不可能相關時回傳 None。
+
+    - 事件方向和當天的總報酬相反：不是原因（例如大盤大跌那天漲停）。
+    - 大盤＋類股＋隔夜部分占主導：事件解釋的是共同部分，方向跟共同部分比。
+    - 個股特有部分占主導：事件頂多解釋超出 beta 的敏感度，方向要跟個股特有報酬一致。
+    """
+    if event_dir and ret and (event_dir > 0) != (ret > 0):
+        return None
+    dominant = abs(common) >= abs(idio)
+    return {
+        "relevance": 0.8 if dominant else 0.3,
+        "prior": 0.7,
+        "direction": direction_score(event_dir, common if dominant else idio),
+        "proximity": 1.0,
+        "credibility": CREDIBILITY["market"],
+    }
+
+
 def build_market_events(settings: Settings) -> int:
     """資料驅動的市場事件：前一晚費半大幅波動、加權指數大幅波動。"""
     engine = get_engine(settings)
@@ -244,15 +263,9 @@ def attribute(settings: Settings) -> None:
                 cands.append((score(c), e.id, c))
             if lag == 0:
                 for e in market_by_day.get(d, []):
-                    dominant = abs(common) >= abs(m.idio)
-                    c = {
-                        "relevance": 0.8 if dominant else 0.3,
-                        "prior": 0.7,
-                        "direction": direction_score(e.direction, common),
-                        "proximity": 1.0,
-                        "credibility": CREDIBILITY["market"],
-                    }
-                    cands.append((score(c), e.id, c))
+                    c = market_components(e.direction, m.ret, common, m.idio)
+                    if c is not None:
+                        cands.append((score(c), e.id, c))
         cands = [c for c in cands if c[0] >= MIN_SCORE]
         cands.sort(key=lambda x: -x[0])
         if cands:
@@ -280,4 +293,13 @@ def attribute(settings: Settings) -> None:
     )
 
 
-__all__ = ["TYPE_NAMES", "attribute", "build_market_events", "direction_score", "reclassify", "score", "type_priors"]
+__all__ = [
+    "TYPE_NAMES",
+    "attribute",
+    "build_market_events",
+    "direction_score",
+    "market_components",
+    "reclassify",
+    "score",
+    "type_priors",
+]

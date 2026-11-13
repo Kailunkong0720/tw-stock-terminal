@@ -5,7 +5,7 @@ import { EmptyState, Panel } from '../../design/Panel'
 import { Segmented } from '../../design/Segmented'
 import type { RankingItem, TrackRecord } from '../../lib/contract/types'
 import { useRanking } from '../../lib/data'
-import { formatDate, formatPct } from '../../lib/format'
+import { formatDate, formatPct, formatProb } from '../../lib/format'
 import { labelTone, TrackLine } from './ModelPanel'
 
 type H = 5 | 10 | 20
@@ -24,11 +24,11 @@ function PoolCard({ t, ic }: { t: TrackRecord; ic: { mean: number | null; n_date
       <div className="grid grid-cols-3 gap-2">
         <div>
           <div className="text-2xs text-text-3">模型命中率</div>
-          <div className="num text-base text-text-1">{formatPct(t.hit_rate, 1)}</div>
+          <div className="num text-base text-text-1">{formatProb(t.hit_rate, 1)}</div>
         </div>
         <div>
           <div className="text-2xs text-text-3">較佳基準</div>
-          <div className="num text-base text-text-2">{formatPct(t.baseline_rate, 1)}</div>
+          <div className="num text-base text-text-2">{formatProb(t.baseline_rate, 1)}</div>
         </div>
         <div>
           <div className="text-2xs text-text-3">差距</div>
@@ -156,7 +156,7 @@ export function ForecastPage() {
                 <td className="whitespace-nowrap px-3 py-1 text-text-1">{it.name}</td>
                 <td className="hidden px-3 py-1 text-text-3 md:table-cell">{it.industry}</td>
                 <td className={`whitespace-nowrap px-3 py-1 ${labelTone(s!.label, Boolean(t?.has_edge))}`}>{s!.label}</td>
-                <td className="num px-3 py-1 text-right text-text-1">{formatPct(s!.up_prob, 0)}</td>
+                <td className="num px-3 py-1 text-right text-text-1">{formatProb(s!.up_prob, 0)}</td>
                 <td className={`num px-3 py-1 text-right ${s!.exp_ret > 0 ? 'text-up' : s!.exp_ret < 0 ? 'text-down' : 'text-flat'}`}>
                   {formatPct(s!.exp_ret, 1)}
                 </td>

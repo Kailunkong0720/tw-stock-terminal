@@ -68,7 +68,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\refresh_publish.ps1 
 
 ## 自動接續的注意事項（2026-11-13）
 
-- 背景工作：`ingest flows`、`ingest mops`、`backtest`。用 `uv run python -m pipeline status` 看鎖檔；在跑就不要重啟
+- 背景工作：`ingest flows`、`ingest mops`、`backtest`。用 `uv run python -m pipeline status` 看鎖檔；在跑就不要重啟；「已結束（殘留鎖檔）」代表中斷了，用 `scripts\start_bg.ps1` 重新啟動（會從中斷處續跑）
 - flows 與 mops 完成後執行一次 `scripts\refresh_publish.ps1`；回測完成後再執行一次
 - **不要**開始新聞回補或 LLM 抽取：等使用者決定新聞來源與 API 金鑰（見 PLAN.md Phase 4、5 的標註）
 - 可以做的：Phase 4 驗收（追蹤池 z 最高的 10 天歸因結果表）、Phase 6 收尾（快捷鍵總表、程式碼分割、行動裝置）、上櫃資料（TPEx 端點需驗證）
@@ -77,7 +77,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\refresh_publish.ps1 
 ## 慣例與已知的坑
 
 - **Windows 系統編碼是 cp1252**：讀寫檔案一律明確指定 `encoding="utf-8"`；`alembic.ini` 只能放 ASCII；PowerShell 把中文用管線傳給 git 會變亂碼，commit 訊息先寫成 UTF-8 檔再 `git commit -F 檔案`
-- uv 的 Python 3.11 版本捷徑在這台機器上建不起來；`.venv` 是用完整路徑建立的（`uv venv --python %APPDATA%\uv\python\cpython-3.11.18-windows-x86_64-none\python.exe`），`.python-version` 仍寫 3.11 給 CI 用
+- uv 的 Python 3.11 版本捷徑在這台機器上建不起來；`.venv` 是用完整路徑建立的，`.python-version` 仍寫 3.11 給 CI 用
+- **Claude 桌面版是封裝應用程式，寫進 `%APPDATA%`、`%LOCALAPPDATA%` 的東西會被虛擬化到 `AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\`**，應用程式外（使用者自己的終端機、WMI 建立的處理程序）看不到。因此：
+  - 基底 Python 已複製到 `pipeline/.python/cpython-3.11.18/`（已 gitignore），`.venv/pyvenv.cfg` 的 `home` 指向它；不要再用 uv 管理的 Python 重建 venv
+  - pnpm 是在應用程式內用 npm 全域安裝的，應用程式外沒有；使用者自己的終端機要先 `npm install -g pnpm@12.18.0`（或用 `npx pnpm@12.18.0`）
+  - uv、Node.js、gh、git 在應用程式外都看得到
+- **長時間背景工作一律用 `scripts\start_bg.ps1` 啟動**（例：`... -File scripts\start_bg.ps1 "ingest flows" "ingest mops" backtest`）。用工作階段的背景指令啟動的處理程序，工作階段結束時會被一起終止（2026-11-13 09:35 三個回補就這樣中斷過）
+- PowerShell 5.1 把沒有 BOM 的 .ps1 當 cp1252 讀：含中文字串的腳本要存成 UTF-8 **含 BOM**
 - Node 26 不內建 corepack，pnpm 是用 `npm install -g pnpm` 裝的
 - 資料契約的單一來源是 `pipeline/pipeline/export/contract.py`。改了之後要跑 `schema` 和 `pnpm gen:types`，CI 會檢查兩者一致
 - push 到 `data` 分支不會觸發部署（該分支沒有工作流程檔），`publish` 會用 `gh workflow run deploy.yml --ref main` 觸發

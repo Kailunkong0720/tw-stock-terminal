@@ -61,6 +61,12 @@ export function formatPct(r: number | null | undefined, digits = 2, fromRatio = 
   return `${v > 0 ? '+' : v < 0 ? '−' : ''}${s}%`
 }
 
+/** 機率、比率：0.75 → 75%（不帶正負號） */
+export function formatProb(r: number | null | undefined, digits = 0): string {
+  if (r == null || !Number.isFinite(r)) return '—'
+  return `${NF[Math.min(digits, 3)]!.format(r * 100)}%`
+}
+
 export function formatSigned(v: number | null | undefined, digits = 2): string {
   if (v == null || !Number.isFinite(v)) return '—'
   const s = NF[Math.min(digits, 3)]!.format(Math.abs(v))

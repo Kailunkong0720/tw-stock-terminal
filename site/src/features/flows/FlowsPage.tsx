@@ -114,6 +114,15 @@ export function FlowsPage() {
     return { buy: rows.slice(0, 10), sell: rows.slice(-10).reverse() }
   }, [heat.data])
 
+  /** 全市場法人資料的最後一天（回補還沒到最新日時，用來說明為什麼右欄是空的） */
+  const flowsUntil = useMemo(() => {
+    const f = mf.data
+    const dates = cal.data?.dates
+    if (!f || !dates) return null
+    for (let i = f.foreign.length - 1; i >= 0; i--) if (f.foreign[i] != null) return dates[f.start + i] ?? null
+    return null
+  }, [mf.data, cal.data])
+
   return (
     <div className="grid min-h-full gap-2 p-2 xl:h-full xl:grid-cols-[minmax(0,1fr)_320px] xl:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
       <Panel
@@ -137,10 +146,13 @@ export function FlowsPage() {
       </Panel>
 
       <Panel title={`當日外資買賣超最大（${heat.data?.as_of ?? ''}）`} className="min-h-80 xl:row-span-2" bodyClassName="overflow-auto">
-        {[
-          ['買超', top.buy],
-          ['賣超', top.sell],
-        ].map(([label, rows]) => (
+        {heat.data && top.buy.length === 0 && (
+          <EmptyState
+            title="這一天還沒有法人資料"
+            detail={flowsUntil ? `目前法人買賣超資料到 ${flowsUntil}，其餘日期回補中。` : '法人買賣超資料回補中。'}
+          />
+        )}
+        {(top.buy.length > 0 ? [['買超', top.buy], ['賣超', top.sell]] : []).map(([label, rows]) => (
           <div key={label as string} className="pb-2">
             <h3 className="px-3 pb-1 pt-2 text-2xs text-text-3">{label as string}</h3>
             <ul className="text-xs">

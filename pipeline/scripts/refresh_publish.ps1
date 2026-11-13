@@ -1,4 +1,4 @@
-# 重新拆解與歸因、建圖、輸出、發布到 data 分支並觸發部署。
+﻿# 重新拆解與歸因、建圖、輸出、發布到 data 分支並觸發部署。
 # 用法（在 pipeline 目錄）：powershell -ExecutionPolicy Bypass -File scripts\refresh_publish.ps1
 $ErrorActionPreference = 'Stop'
 $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')

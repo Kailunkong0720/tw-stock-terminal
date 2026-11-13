@@ -12,6 +12,7 @@
 # pipeline: local DB, HTTP cache, model weights
 pipeline/data/
 pipeline/.venv/
+pipeline/.python/
 __pycache__/
 *.py[cod]
 .pytest_cache/

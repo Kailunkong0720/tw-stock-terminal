@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router'
 
 import { EmptyState } from '../../design/Panel'
 import type { Forecast, SignalOut, TrackRecord } from '../../lib/contract/types'
-import { formatDate, formatPct } from '../../lib/format'
+import { formatDate, formatPct, formatProb } from '../../lib/format'
 
 /** 標籤顏色：有回測優勢時用漲跌色；沒有優勢一律灰色（PLAN.md 5.2）。 */
 export function labelTone(label: string, edge: boolean): string {
@@ -25,8 +25,8 @@ export function TrackLine({ t }: { t: TrackRecord | undefined }) {
   if (!t || t.n === 0 || t.hit_rate == null) return <span className="text-text-3">尚無回測樣本</span>
   return (
     <span className="text-text-3">
-      回測命中 <span className="num text-text-2">{formatPct(t.hit_rate, 0)}</span>
-      <span className="mx-1">·</span>基準 <span className="num">{formatPct(t.baseline_rate, 0)}</span>
+      回測命中 <span className="num text-text-2">{formatProb(t.hit_rate, 0)}</span>
+      <span className="mx-1">·</span>基準 <span className="num">{formatProb(t.baseline_rate, 0)}</span>
       <span className="mx-1">·</span>樣本 <span className="num">{t.n}</span>
     </span>
   )
@@ -44,7 +44,7 @@ function SignalRow({ s, t }: { s: SignalOut; t: TrackRecord | undefined }) {
       <div className="grid grid-cols-3 gap-2 text-2xs">
         <div>
           <div className="text-text-3">上漲機率</div>
-          <div className="num text-text-1">{formatPct(s.up_prob, 0)}</div>
+          <div className="num text-text-1">{formatProb(s.up_prob, 0)}</div>
         </div>
         <div>
           <div className="text-text-3">預期報酬</div>
