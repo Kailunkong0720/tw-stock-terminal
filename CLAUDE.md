@@ -60,7 +60,15 @@ pnpm gen:types    # schema.json → src/lib/contract/types.ts
 pnpm build        # 型別檢查 + 打包
 ```
 
-完整更新並發布（拆解＋歸因＋建圖 → 輸出 → 推送 data 分支並觸發部署）：
+每季更新（使用者決定約每季一次，不需要每天；補資料 → 重算 → 回測新增基準日 → 輸出 → 發布，可續跑）：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\quarterly_update.ps1   # 在 pipeline/ 下；-NoPush、-SkipBacktest
+```
+
+分析說明（方法、計算時間、資料期間）寫在 `pipeline/pipeline/export/provenance.py`；新增分析時要在那裡加一項，並在分析步驟結束時呼叫 `core/provenance.py` 的 `save_run`。
+
+只重算與發布（拆解＋歸因＋建圖 → 輸出 → 推送 data 分支並觸發部署）：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\refresh_publish.ps1   # 在 pipeline/ 下
@@ -70,7 +78,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\refresh_publish.ps1 
 
 - 背景工作：`ingest flows`、`ingest mops`、`backtest`。用 `uv run python -m pipeline status` 看鎖檔；在跑就不要重啟；「已結束（殘留鎖檔）」代表中斷了，用 `scripts\start_bg.ps1` 重新啟動（會從中斷處續跑）
 - flows 與 mops 完成後執行一次 `scripts\refresh_publish.ps1`；回測完成後再執行一次
-- 新聞來源已定：**GDELT DOC 2.0、最近三個月**（2026-11-13 使用者決定），可以實作與回補；**不要**開始 LLM 抽取（等使用者提供 API 金鑰並同意費用）；3D 地球等使用者回覆
+- 新聞來源已定：**GDELT DOC 2.0、最近三個月**（2026-11-13 使用者決定），可以實作與回補：一輪抓完存起來，不重複抓（2026-11-13 上午本機被 GDELT 限流 429，要長時間退避）；**不要**開始 LLM 抽取（等使用者提供 API 金鑰並同意費用）
+- 3D 地球已完成（隔夜傳導＋全球供應鏈）；分析說明已完成（每項分析的方法／計算時間／資料期間）
 - 可以做的：Phase 4 驗收（追蹤池 z 最高的 10 天歸因結果表）、Phase 6 收尾（快捷鍵總表、程式碼分割、行動裝置）、上櫃資料（TPEx 端點需驗證）
 - 電腦會睡眠：長時間指令已用 SetThreadExecutionState 防閒置睡眠；闔上筆電仍會中斷，重新執行同一指令即可續跑
 

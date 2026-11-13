@@ -16,8 +16,10 @@
 | 模型 | 追蹤池的 Kronos 訊號排行、模型整體回測命中率與基準比較 |
 | 漲跌解析 | 個股特有波動最大的日子、市場事件；單日拆解（大盤／類股／隔夜美股／個股特有）與可能相關的事件 |
 | 知識圖譜 | 公司、產業、題材、海外公司、市場指標與事件的關係圖；大波動的解釋路徑；傳導預覽 |
+| 全球脈動 | 3D 地球：隔夜傳導（美股前一晚的變動以弧線連到台股當天，可逐日播放 2020 年至今）與全球供應鏈（海外公司總部與台股公司所在縣市之間的關係） |
+| 關於 | 更新方式、每項分析的方法／參數／使用的資料期間／計算時間（由管線自動記錄）、資料來源的起訖日 |
 
-快捷鍵：`Ctrl+K` 搜尋、`1`–`6` 切換區間、`A` 切換還原、`↑↓` 切換自選、`?` 快捷鍵表。
+快捷鍵：`Ctrl+K` 搜尋、`1`–`6` 切換區間、`A` 切換還原、`↑↓` 切換自選、`←→` 與空白鍵（全球脈動）、`?` 快捷鍵表。
 
 ## 架構
 
@@ -36,7 +38,21 @@ pipeline：抓資料 → 計算 → 輸出 JSON ──push──► data 分支�
 
 ## 更新資料
 
-需要 [uv](https://docs.astral.sh/uv/) 與 [GitHub CLI](https://cli.github.com/)。
+網站不是即時的：資料在本機抓取與計算，**約每季更新一次**，再推上 GitHub。需要 [uv](https://docs.astral.sh/uv/) 與 [GitHub CLI](https://cli.github.com/)。
+
+每季更新（一個指令；可以中斷後重跑，從中斷處繼續）：
+
+```powershell
+cd pipeline
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\quarterly_update.ps1
+```
+
+依序：補行情、公司行動、法人、海外指數、重大訊息 → 漲跌拆解、事件歸因、知識圖譜 → Kronos 最新預測 → 回測（只算新增的基準日）→ 輸出 → 推送並觸發部署。
+加 `-NoPush` 只建本機 commit、`-SkipBacktest` 跳過回測。每項分析的執行時間與資料期間會自動記錄，顯示在網站「關於 → 分析說明」。
+
+GDELT 新聞只保留最近三個月，兩次更新的間隔最好不要超過三個月。
+
+也可以分開執行：
 
 ```bash
 cd pipeline
@@ -77,6 +93,7 @@ cd ../site && pnpm gen:types
 
 - [Kronos](https://github.com/shiyu-coder/Kronos)（MIT）：K 線基礎模型，程式碼在 `pipeline/vendor/kronos/`
 - [TradingView Lightweight Charts™](https://www.tradingview.com/lightweight-charts/)（Apache-2.0）：K 線圖
+- [globe.gl](https://github.com/vasturiano/globe.gl)（MIT）：3D 地球；國界資料 [world-atlas](https://github.com/topojson/world-atlas)（Natural Earth，公有領域）
 
 ## 授權
 
