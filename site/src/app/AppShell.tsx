@@ -2,6 +2,7 @@ import { Outlet } from '@tanstack/react-router'
 
 import { CONTRACT_VERSION, useMeta } from '../lib/data'
 import { SearchDialog, useGlobalShortcuts } from './SearchDialog'
+import { ShortcutHelp } from './ShortcutHelp'
 import { StatusBar } from './StatusBar'
 import { TopNav } from './TopNav'
 
@@ -26,6 +27,7 @@ export function AppShell() {
       </main>
       <StatusBar />
       <SearchDialog />
+      <ShortcutHelp />
     </div>
   )
 }
