@@ -357,6 +357,41 @@ def build_analyses(
         )
     )
 
+    fin = date_range(
+        engine,
+        "SELECT MIN(b.date), MAX(b.date) FROM daily_bar b JOIN security s ON s.symbol = b.symbol "
+        "WHERE s.industry = '金融保險' AND s.kind = 'stock'",
+        end,
+    )
+    n_fin = pd.read_sql_query(
+        "SELECT COUNT(*) AS n FROM security WHERE industry = '金融保險' AND kind = 'stock' AND last_bar = :d",
+        engine,
+        params={"d": end.isoformat()},
+    )["n"].iloc[0]
+    out.append(
+        AnalysisInfo(
+            id="financials",
+            name="金融股專區",
+            method=(
+                "證交所與櫃買中心產業別為「金融保險」、資料截止日仍在交易的普通股。類別（金控、銀行、保險、證券期貨、其他）"
+                "依公司名稱判斷。報酬為還原後（含除權息）；殖利率為近一年除權息合計（前收 − 參考價，含股票股利的價值，"
+                "純現金增資不算）÷ 收盤；外資與投信為買賣超股數 × 收盤價的估算；外資持股變化為四週前到最新一週的差。"
+                "美債敏感度是日報酬與美國十年期公債殖利率前一晚變動（基點）的相關係數與斜率，近 500 個交易日。"
+            ),
+            params=["近一個月：22 個交易日", "外資、投信：近 5 日與近 20 日合計", "迷你走勢：近一年每週還原收盤"],
+            inputs=[
+                f"日線與公司行動：{_fmt(fin[0])} 至 {_fmt(fin[1])}",
+                "三大法人買賣超、外資持股（證交所、櫃買中心）",
+                "證交所金融保險類指數、加權指數；Yahoo Finance 美國十年期公債殖利率",
+            ],
+            data_from=fin[0],
+            data_to=fin[1],
+            run_last=generated_at,
+            summary=f"{n_fin} 檔",
+            page="/financials",
+        )
+    )
+
     glob = date_range(engine, "SELECT MIN(date), MAX(date) FROM index_bar WHERE index_id = 'GLOBAL:SOX'", end)
     out.append(
         AnalysisInfo(

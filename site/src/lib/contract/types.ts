@@ -25,6 +25,7 @@ export interface Contract {
   Overview?: Overview;
   Heatmap?: Heatmap;
   HeatmapHistory?: HeatmapHistory;
+  Financials?: Financials;
 }
 /**
  * data/globe/overnight.json：美股前一晚的變動與台股當天的表現（隔夜傳導）。
@@ -817,4 +818,103 @@ export interface HeatmapHistory {
    * 各週外資估算買賣超（億元）
    */
   foreign: (number | null)[][];
+}
+/**
+ * data/sector/financials.json：金融股專區。
+ */
+export interface Financials {
+  as_of: string;
+  groups: string[];
+  items: FinancialStock[];
+  /**
+   * 2020 年以來每週最後一個交易日（指數用）
+   */
+  weeks: string[];
+  /**
+   * 近一年每週最後一個交易日（個股迷你走勢用）
+   */
+  weeks_1y: string[];
+  /**
+   * 金融保險類指數與加權指數
+   */
+  index: WeeklySeries[];
+}
+export interface FinancialStock {
+  symbol: string;
+  name: string;
+  /**
+   * 金控 / 銀行 / 保險 / 證券期貨 / 其他（依名稱判斷）
+   */
+  group: string;
+  market: "TWSE" | "TPEx";
+  tracked: boolean;
+  close: number;
+  /**
+   * 資料截止日漲跌（%）
+   */
+  change_pct: number | null;
+  /**
+   * 近一個月還原報酬（%）
+   */
+  ret_1m: number | null;
+  /**
+   * 今年以來還原報酬（%）
+   */
+  ret_ytd: number | null;
+  /**
+   * 近一年還原報酬（%）
+   */
+  ret_1y: number | null;
+  /**
+   * 市值（億元）
+   */
+  cap: number | null;
+  /**
+   * 近一年除權息合計（元／股，含股票股利價值）
+   */
+  payout_1y: number | null;
+  /**
+   * 近一年除權息合計 ÷ 收盤（%）
+   */
+  yield_1y: number | null;
+  /**
+   * 外資近 5 日估算買賣超（億元）
+   */
+  foreign_5d: number | null;
+  /**
+   * 外資近 20 日估算買賣超（億元）
+   */
+  foreign_20d: number | null;
+  /**
+   * 投信近 20 日估算買賣超（億元）
+   */
+  trust_20d: number | null;
+  /**
+   * 外資持股比率（%）
+   */
+  foreign_pct: number | null;
+  /**
+   * 外資持股比率四週變化（百分點）
+   */
+  foreign_pct_chg_4w: number | null;
+  /**
+   * 日報酬與美國十年期公債殖利率前一晚變動的相關係數（近 500 日）
+   */
+  us10y_rho: number | null;
+  /**
+   * 美債殖利率每上升 1 基點，股價平均變動（%）
+   */
+  us10y_beta: number | null;
+  /**
+   * 近一年每週還原收盤，與 weeks_1y 對齊
+   */
+  weekly: (number | null)[];
+}
+export interface WeeklySeries {
+  id: string;
+  name: string;
+  /**
+   * 與 weeks 對齊的週收盤
+   */
+  values: (number | null)[];
 }

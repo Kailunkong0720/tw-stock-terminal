@@ -9,6 +9,7 @@ const NAV = [
   { to: '/', label: '市場' },
   { to: '/stock/$symbol', params: { symbol: '2330' }, label: '個股' },
   { to: '/flows', label: '資金流向' },
+  { to: '/financials', label: '金融股' },
   { to: '/forecast', label: '模型' },
   { to: '/explain', label: '漲跌解析' },
   { to: '/graph', label: '知識圖譜' },

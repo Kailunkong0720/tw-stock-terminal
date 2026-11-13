@@ -67,6 +67,9 @@
     },
     "HeatmapHistory": {
       "$ref": "#/$defs/HeatmapHistory"
+    },
+    "Financials": {
+      "$ref": "#/$defs/Financials"
     }
   },
   "additionalProperties": false,
@@ -2498,6 +2501,314 @@
         "foreign"
       ],
       "title": "HeatmapHistory",
+      "type": "object"
+    },
+    "FinancialStock": {
+      "additionalProperties": false,
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "group": {
+          "description": "金控 / 銀行 / 保險 / 證券期貨 / 其他（依名稱判斷）",
+          "type": "string"
+        },
+        "market": {
+          "enum": [
+            "TWSE",
+            "TPEx"
+          ],
+          "type": "string"
+        },
+        "tracked": {
+          "type": "boolean"
+        },
+        "close": {
+          "type": "number"
+        },
+        "change_pct": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "資料截止日漲跌（%）"
+        },
+        "ret_1m": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "近一個月還原報酬（%）"
+        },
+        "ret_ytd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "今年以來還原報酬（%）"
+        },
+        "ret_1y": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "近一年還原報酬（%）"
+        },
+        "cap": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "市值（億元）"
+        },
+        "payout_1y": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "近一年除權息合計（元／股，含股票股利價值）"
+        },
+        "yield_1y": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "近一年除權息合計 ÷ 收盤（%）"
+        },
+        "foreign_5d": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "外資近 5 日估算買賣超（億元）"
+        },
+        "foreign_20d": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "外資近 20 日估算買賣超（億元）"
+        },
+        "trust_20d": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "投信近 20 日估算買賣超（億元）"
+        },
+        "foreign_pct": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "外資持股比率（%）"
+        },
+        "foreign_pct_chg_4w": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "外資持股比率四週變化（百分點）"
+        },
+        "us10y_rho": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "日報酬與美國十年期公債殖利率前一晚變動的相關係數（近 500 日）"
+        },
+        "us10y_beta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "美債殖利率每上升 1 基點，股價平均變動（%）"
+        },
+        "weekly": {
+          "description": "近一年每週還原收盤，與 weeks_1y 對齊",
+          "items": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "symbol",
+        "name",
+        "group",
+        "market",
+        "tracked",
+        "close",
+        "change_pct",
+        "ret_1m",
+        "ret_ytd",
+        "ret_1y",
+        "cap",
+        "payout_1y",
+        "yield_1y",
+        "foreign_5d",
+        "foreign_20d",
+        "trust_20d",
+        "foreign_pct",
+        "foreign_pct_chg_4w",
+        "us10y_rho",
+        "us10y_beta",
+        "weekly"
+      ],
+      "title": "FinancialStock",
+      "type": "object"
+    },
+    "WeeklySeries": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "values": {
+          "description": "與 weeks 對齊的週收盤",
+          "items": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "values"
+      ],
+      "title": "WeeklySeries",
+      "type": "object"
+    },
+    "Financials": {
+      "additionalProperties": false,
+      "description": "data/sector/financials.json：金融股專區。",
+      "properties": {
+        "as_of": {
+          "format": "date",
+          "type": "string"
+        },
+        "groups": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/FinancialStock"
+          },
+          "type": "array"
+        },
+        "weeks": {
+          "description": "2020 年以來每週最後一個交易日（指數用）",
+          "items": {
+            "format": "date",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "weeks_1y": {
+          "description": "近一年每週最後一個交易日（個股迷你走勢用）",
+          "items": {
+            "format": "date",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "index": {
+          "description": "金融保險類指數與加權指數",
+          "items": {
+            "$ref": "#/$defs/WeeklySeries"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "as_of",
+        "groups",
+        "items",
+        "weeks",
+        "weeks_1y",
+        "index"
+      ],
+      "title": "Financials",
       "type": "object"
     }
   }

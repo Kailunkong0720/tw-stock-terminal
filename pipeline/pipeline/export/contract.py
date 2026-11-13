@@ -490,6 +490,47 @@ class GlobeSupply(_Model):
     links: list[GlobeLink]
 
 
+class FinancialStock(_Model):
+    symbol: str
+    name: str
+    group: str = Field(description="金控 / 銀行 / 保險 / 證券期貨 / 其他（依名稱判斷）")
+    market: Literal["TWSE", "TPEx"]
+    tracked: bool
+    close: float
+    change_pct: float | None = Field(description="資料截止日漲跌（%）")
+    ret_1m: float | None = Field(description="近一個月還原報酬（%）")
+    ret_ytd: float | None = Field(description="今年以來還原報酬（%）")
+    ret_1y: float | None = Field(description="近一年還原報酬（%）")
+    cap: float | None = Field(description="市值（億元）")
+    payout_1y: float | None = Field(description="近一年除權息合計（元／股，含股票股利價值）")
+    yield_1y: float | None = Field(description="近一年除權息合計 ÷ 收盤（%）")
+    foreign_5d: float | None = Field(description="外資近 5 日估算買賣超（億元）")
+    foreign_20d: float | None = Field(description="外資近 20 日估算買賣超（億元）")
+    trust_20d: float | None = Field(description="投信近 20 日估算買賣超（億元）")
+    foreign_pct: float | None = Field(description="外資持股比率（%）")
+    foreign_pct_chg_4w: float | None = Field(description="外資持股比率四週變化（百分點）")
+    us10y_rho: float | None = Field(description="日報酬與美國十年期公債殖利率前一晚變動的相關係數（近 500 日）")
+    us10y_beta: float | None = Field(description="美債殖利率每上升 1 基點，股價平均變動（%）")
+    weekly: list[float | None] = Field(description="近一年每週還原收盤，與 weeks_1y 對齊")
+
+
+class WeeklySeries(_Model):
+    id: str
+    name: str
+    values: list[float | None] = Field(description="與 weeks 對齊的週收盤")
+
+
+class Financials(_Model):
+    """data/sector/financials.json：金融股專區。"""
+
+    as_of: date
+    groups: list[str]
+    items: list[FinancialStock]
+    weeks: list[date] = Field(description="2020 年以來每週最後一個交易日（指數用）")
+    weeks_1y: list[date] = Field(description="近一年每週最後一個交易日（個股迷你走勢用）")
+    index: list[WeeklySeries] = Field(description="金融保險類指數與加權指數")
+
+
 # 產生 JSON Schema / TypeScript 型別時要包含的頂層模型
 EXPORTED_MODELS: list[type[BaseModel]] = [
     GlobeOvernight,
@@ -513,4 +554,5 @@ EXPORTED_MODELS: list[type[BaseModel]] = [
     Overview,
     Heatmap,
     HeatmapHistory,
+    Financials,
 ]

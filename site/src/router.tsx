@@ -28,6 +28,7 @@ const Forecast = lazyRouteComponent(() => import('./features/forecast/ForecastPa
 const ExplainIndex = lazyRouteComponent(() => import('./features/explain/ExplainPages'), 'ExplainIndexPage')
 const ExplainDetail = lazyRouteComponent(() => import('./features/explain/ExplainPages'), 'ExplainDetailPage')
 const Graph = lazyRouteComponent(() => import('./features/graph/GraphPage'), 'GraphPage')
+const Financials = lazyRouteComponent(() => import('./features/financials/FinancialsPage'), 'FinancialsPage')
 const Globe = lazyRouteComponent(() => import('./features/globe/GlobePage'), 'GlobePage')
 const About = lazyRouteComponent(() => import('./features/about/AboutPage'), 'AboutPage')
 
@@ -42,6 +43,7 @@ const routes = [
   createRoute({ getParentRoute: () => rootRoute, path: '/explain/$symbol/$date', component: ExplainDetail }),
   createRoute({ getParentRoute: () => rootRoute, path: '/graph', component: Graph }),
   createRoute({ getParentRoute: () => rootRoute, path: '/graph/$symbol', component: Graph }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/financials', component: Financials }),
   createRoute({ getParentRoute: () => rootRoute, path: '/globe', component: Globe }),
   createRoute({ getParentRoute: () => rootRoute, path: '/about', component: About }),
 ]
