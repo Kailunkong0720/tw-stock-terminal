@@ -102,19 +102,23 @@ def gdelt_available() -> bool:
     """先用一個請求確認 GDELT 沒有在限流這台電腦；被限流時直接結束，不做長時間退避。"""
     import httpx
 
-    try:
-        r = httpx.get(
-            URL,
-            params={"query": "TSMC", "mode": "artlist", "format": "json", "maxrecords": "1", "timespan": "1d"},
-            timeout=30,
-        )
-    except httpx.HTTPError as e:
-        log.warning("GDELT 連線失敗：%s", e)
-        return False
-    if r.status_code == 429:
-        log.warning("GDELT 仍在限流這台電腦（HTTP 429），這次不抓；稍後再執行 ingest news 會從頭接續")
-        return False
-    return r.status_code == 200
+    for attempt in range(3):
+        if attempt:
+            time_mod.sleep(180)
+        try:
+            r = httpx.get(
+                URL,
+                params={"query": "TSMC", "mode": "artlist", "format": "json", "maxrecords": "1", "timespan": "1d"},
+                timeout=30,
+            )
+        except httpx.HTTPError as e:
+            log.warning("GDELT 連線失敗：%s", e)
+            continue
+        if r.status_code == 200:
+            return True
+        log.info("GDELT 回應 %d（第 %d 次檢查）", r.status_code, attempt + 1)
+    log.warning("GDELT 仍在限流這台電腦，這次不抓；稍後再執行 ingest news 會從中斷處接續")
+    return False
 
 
 def ingest_news(settings: Settings, today: date | None = None) -> None:
