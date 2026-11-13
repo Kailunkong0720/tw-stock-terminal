@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 REL_NAMES = {
     "supplies_to": "供應給",
     "competes": "競爭",
+    "partners": "合作",
     "member_of": "屬於題材",
     "in_industry": "屬於產業",
     "sensitive_to": "連動",

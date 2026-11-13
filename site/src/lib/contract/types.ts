@@ -4,6 +4,8 @@
  * tw-stock-terminal 靜態資料契約（由 pipeline 自動產生，請勿手改）
  */
 export interface Contract {
+  GlobeOvernight?: GlobeOvernight;
+  GlobeSupply?: GlobeSupply;
   GraphCore?: GraphCore;
   GraphEgo?: GraphEgo;
   GraphPropagate?: GraphPropagate;
@@ -22,6 +24,91 @@ export interface Contract {
   IndustryFlows?: IndustryFlows;
   Overview?: Overview;
   Heatmap?: Heatmap;
+}
+/**
+ * data/globe/overnight.json：美股前一晚的變動與台股當天的表現（隔夜傳導）。
+ */
+export interface GlobeOvernight {
+  start: number;
+  series: OvernightSeries[];
+  /**
+   * 加權指數當日報酬
+   */
+  taiex: (number | null)[];
+  /**
+   * 台積電當日報酬（含除權息還原）
+   */
+  tsmc: (number | null)[];
+  /**
+   * 落點座標 [lat, lng]：taiex、tsmc
+   */
+  landing: {
+    [k: string]: number[];
+  };
+}
+export interface OvernightSeries {
+  /**
+   * 例如 GLOBAL:SOX
+   */
+  id: string;
+  name: string;
+  /**
+   * pct：報酬率（0.01 = 1%）；bp：殖利率變動（基點）
+   */
+  unit: "pct" | "bp";
+  lat: number;
+  lng: number;
+  place: string;
+  /**
+   * 弧線落點：加權指數（台北）或台積電（新竹）
+   */
+  target: "taiex" | "tsmc";
+  /**
+   * 與日曆對齊（從 start 起）：台股該交易日開盤前、上一個台股交易日之後的海外交易日累積變動；期間沒有海外交易日為 null
+   */
+  values: (number | null)[];
+}
+/**
+ * data/globe/supply.json：全球實體與台股公司的位置，以及兩者之間的關係。
+ */
+export interface GlobeSupply {
+  places: GlobePlace[];
+  links: GlobeLink[];
+}
+export interface GlobePlace {
+  /**
+   * 圖譜節點 id，例如 entity:nvidia、company:2330
+   */
+  id: string;
+  name: string;
+  /**
+   * global_company / organization / indicator / company
+   */
+  type: string;
+  lat: number;
+  lng: number;
+  /**
+   * 地點說明，例如「美國加州聖塔克拉拉」或「新竹科學園區」
+   */
+  place: string;
+  symbol: string | null;
+  industry: string | null;
+  tracked: boolean;
+}
+export interface GlobeLink {
+  source: string;
+  target: string;
+  rel: string;
+  rel_name: string;
+  /**
+   * seed：公開資訊人工整理；data：實測股價連動
+   */
+  origin: "seed" | "data";
+  /**
+   * 實測相關係數（origin 為 data 時）
+   */
+  rho: number | null;
+  note: string | null;
 }
 /**
  * data/graph/core.json：種子圖與由資料算出的靜態關係。

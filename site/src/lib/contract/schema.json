@@ -5,6 +5,12 @@
   "x-contract-version": 1,
   "type": "object",
   "properties": {
+    "GlobeOvernight": {
+      "$ref": "#/$defs/GlobeOvernight"
+    },
+    "GlobeSupply": {
+      "$ref": "#/$defs/GlobeSupply"
+    },
     "GraphCore": {
       "$ref": "#/$defs/GraphCore"
     },
@@ -62,6 +68,279 @@
   },
   "additionalProperties": false,
   "$defs": {
+    "OvernightSeries": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "例如 GLOBAL:SOX",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "unit": {
+          "description": "pct：報酬率（0.01 = 1%）；bp：殖利率變動（基點）",
+          "enum": [
+            "pct",
+            "bp"
+          ],
+          "type": "string"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "place": {
+          "type": "string"
+        },
+        "target": {
+          "description": "弧線落點：加權指數（台北）或台積電（新竹）",
+          "enum": [
+            "taiex",
+            "tsmc"
+          ],
+          "type": "string"
+        },
+        "values": {
+          "description": "與日曆對齊（從 start 起）：台股該交易日開盤前、上一個台股交易日之後的海外交易日累積變動；期間沒有海外交易日為 null",
+          "items": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "unit",
+        "lat",
+        "lng",
+        "place",
+        "target",
+        "values"
+      ],
+      "title": "OvernightSeries",
+      "type": "object"
+    },
+    "GlobeOvernight": {
+      "additionalProperties": false,
+      "description": "data/globe/overnight.json：美股前一晚的變動與台股當天的表現（隔夜傳導）。",
+      "properties": {
+        "start": {
+          "type": "integer"
+        },
+        "series": {
+          "items": {
+            "$ref": "#/$defs/OvernightSeries"
+          },
+          "type": "array"
+        },
+        "taiex": {
+          "description": "加權指數當日報酬",
+          "items": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "tsmc": {
+          "description": "台積電當日報酬（含除權息還原）",
+          "items": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "landing": {
+          "additionalProperties": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "description": "落點座標 [lat, lng]：taiex、tsmc",
+          "type": "object"
+        }
+      },
+      "required": [
+        "start",
+        "series",
+        "taiex",
+        "tsmc",
+        "landing"
+      ],
+      "title": "GlobeOvernight",
+      "type": "object"
+    },
+    "GlobeLink": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "rel": {
+          "type": "string"
+        },
+        "rel_name": {
+          "type": "string"
+        },
+        "origin": {
+          "description": "seed：公開資訊人工整理；data：實測股價連動",
+          "enum": [
+            "seed",
+            "data"
+          ],
+          "type": "string"
+        },
+        "rho": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "實測相關係數（origin 為 data 時）"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "source",
+        "target",
+        "rel",
+        "rel_name",
+        "origin",
+        "rho",
+        "note"
+      ],
+      "title": "GlobeLink",
+      "type": "object"
+    },
+    "GlobePlace": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "圖譜節點 id，例如 entity:nvidia、company:2330",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "description": "global_company / organization / indicator / company",
+          "type": "string"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "place": {
+          "description": "地點說明，例如「美國加州聖塔克拉拉」或「新竹科學園區」",
+          "type": "string"
+        },
+        "symbol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "industry": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tracked": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type",
+        "lat",
+        "lng",
+        "place",
+        "symbol",
+        "industry",
+        "tracked"
+      ],
+      "title": "GlobePlace",
+      "type": "object"
+    },
+    "GlobeSupply": {
+      "additionalProperties": false,
+      "description": "data/globe/supply.json：全球實體與台股公司的位置，以及兩者之間的關係。",
+      "properties": {
+        "places": {
+          "items": {
+            "$ref": "#/$defs/GlobePlace"
+          },
+          "type": "array"
+        },
+        "links": {
+          "items": {
+            "$ref": "#/$defs/GlobeLink"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "places",
+        "links"
+      ],
+      "title": "GlobeSupply",
+      "type": "object"
+    },
     "GraphLink": {
       "additionalProperties": false,
       "properties": {

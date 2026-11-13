@@ -1,0 +1,41 @@
+/* globe.gl 的浮動提示與地圖上的 HTML 標籤，配合終端的配色 */
+.globe-host .float-tooltip-kap {
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  color: var(--text-1);
+  font: 12px/1.45 var(--font-sans);
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.globe-tag {
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  margin-top: -6px;
+  background: color-mix(in srgb, var(--bg-panel) 88%, transparent);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  color: var(--text-1);
+  font: 11px/1.4 var(--font-sans);
+  padding: 3px 6px;
+  white-space: nowrap;
+  transition: opacity 150ms;
+}
+
+.globe-tag .num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.globe-tag .muted {
+  color: var(--text-3);
+}
+
+.globe-tag .up {
+  color: var(--up);
+}
+
+.globe-tag .down {
+  color: var(--down);
+}

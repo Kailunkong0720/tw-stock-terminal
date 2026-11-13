@@ -8,27 +8,33 @@
 source: 人工整理（公開資訊，2026-11）
 
 nodes:
-  - {id: entity:nvidia, type: global_company, name: 輝達, aliases: [NVIDIA, 英偉達, 輝達]}
-  - {id: entity:apple, type: global_company, name: 蘋果, aliases: [Apple, 蘋果公司]}
-  - {id: entity:amd, type: global_company, name: 超微, aliases: [AMD, 超微半導體]}
-  - {id: entity:broadcom, type: global_company, name: 博通, aliases: [Broadcom]}
-  - {id: entity:qualcomm, type: global_company, name: 高通, aliases: [Qualcomm]}
-  - {id: entity:intel, type: global_company, name: 英特爾, aliases: [Intel]}
-  - {id: entity:microsoft, type: global_company, name: 微軟, aliases: [Microsoft]}
-  - {id: entity:google, type: global_company, name: Google, aliases: [Alphabet, 谷歌]}
-  - {id: entity:amazon, type: global_company, name: 亞馬遜, aliases: [Amazon, AWS]}
-  - {id: entity:meta, type: global_company, name: Meta, aliases: [臉書, Facebook]}
-  - {id: entity:samsung, type: global_company, name: 三星, aliases: [Samsung, 三星電子]}
-  - {id: entity:tesla, type: global_company, name: 特斯拉, aliases: [Tesla]}
-  - {id: org:fed, type: organization, name: 聯準會, aliases: [Fed, 美國聯準會, 美國聯邦準備理事會]}
-  - {id: org:us_commerce, type: organization, name: 美國商務部, aliases: [商務部, BIS, 美國商務部工業與安全局]}
+  - {id: entity:nvidia, type: global_company, name: 輝達, aliases: [NVIDIA, 英偉達, 輝達], lat: 37.371, lng: -121.964, place: 美國加州聖塔克拉拉}
+  - {id: entity:apple, type: global_company, name: 蘋果, aliases: [Apple, 蘋果公司], lat: 37.335, lng: -122.009, place: 美國加州庫比蒂諾}
+  - {id: entity:amd, type: global_company, name: 超微, aliases: [AMD, 超微半導體], lat: 37.383, lng: -121.972, place: 美國加州聖塔克拉拉}
+  - {id: entity:broadcom, type: global_company, name: 博通, aliases: [Broadcom], lat: 37.418, lng: -122.145, place: 美國加州帕羅奧圖}
+  - {id: entity:qualcomm, type: global_company, name: 高通, aliases: [Qualcomm], lat: 32.896, lng: -117.196, place: 美國加州聖地牙哥}
+  - {id: entity:intel, type: global_company, name: 英特爾, aliases: [Intel], lat: 37.388, lng: -121.963, place: 美國加州聖塔克拉拉}
+  - {id: entity:microsoft, type: global_company, name: 微軟, aliases: [Microsoft], lat: 47.640, lng: -122.130, place: 美國華盛頓州雷德蒙德}
+  - {id: entity:google, type: global_company, name: Google, aliases: [Alphabet, 谷歌], lat: 37.422, lng: -122.084, place: 美國加州山景城}
+  - {id: entity:amazon, type: global_company, name: 亞馬遜, aliases: [Amazon, AWS], lat: 47.622, lng: -122.337, place: 美國華盛頓州西雅圖}
+  - {id: entity:meta, type: global_company, name: Meta, aliases: [臉書, Facebook], lat: 37.485, lng: -122.148, place: 美國加州門洛帕克}
+  - {id: entity:samsung, type: global_company, name: 三星, aliases: [Samsung, 三星電子], lat: 37.258, lng: 127.050, place: 韓國水原}
+  - {id: entity:tesla, type: global_company, name: 特斯拉, aliases: [Tesla], lat: 30.222, lng: -97.617, place: 美國德州奧斯汀}
+  - {id: entity:asml, type: global_company, name: 艾司摩爾, aliases: [ASML], lat: 51.408, lng: 5.413, place: 荷蘭費爾德霍溫}
+  - {id: entity:tel, type: global_company, name: 東京威力科創, aliases: [Tokyo Electron, TEL], lat: 35.672, lng: 139.737, place: 日本東京}
+  - {id: entity:sony, type: global_company, name: 索尼, aliases: [Sony, 新力], lat: 35.630, lng: 139.743, place: 日本東京}
+  - {id: entity:micron, type: global_company, name: 美光, aliases: [Micron], lat: 43.567, lng: -116.205, place: 美國愛達荷州波夕}
+  - {id: entity:dell, type: global_company, name: 戴爾, aliases: [Dell], lat: 30.484, lng: -97.663, place: 美國德州朗德羅克}
+  - {id: entity:hp, type: global_company, name: 惠普, aliases: [HP, HP Inc.], lat: 37.413, lng: -122.149, place: 美國加州帕羅奧圖}
+  - {id: org:fed, type: organization, name: 聯準會, aliases: [Fed, 美國聯準會, 美國聯邦準備理事會], lat: 38.893, lng: -77.045, place: 美國華盛頓特區}
+  - {id: org:us_commerce, type: organization, name: 美國商務部, aliases: [商務部, BIS, 美國商務部工業與安全局], lat: 38.894, lng: -77.033, place: 美國華盛頓特區}
   - {id: country:us, type: country, name: 美國, aliases: [US, USA]}
   - {id: country:china, type: country, name: 中國, aliases: [中國大陸, 大陸]}
-  - {id: indicator:sox, type: indicator, name: 費城半導體指數, aliases: [費半, SOX], series: GLOBAL:SOX}
-  - {id: indicator:nasdaq, type: indicator, name: 那斯達克, aliases: [Nasdaq, 那指], series: GLOBAL:NASDAQ}
+  - {id: indicator:sox, type: indicator, name: 費城半導體指數, aliases: [費半, SOX], series: GLOBAL:SOX, lat: 39.952, lng: -75.165, place: 美國費城}
+  - {id: indicator:nasdaq, type: indicator, name: 那斯達克, aliases: [Nasdaq, 那指], series: GLOBAL:NASDAQ, lat: 40.757, lng: -73.986, place: 美國紐約}
   - {id: indicator:usdtwd, type: indicator, name: 美元兌台幣, aliases: [新台幣匯率, 台幣], series: GLOBAL:USDTWD}
-  - {id: indicator:us10y, type: indicator, name: 美國十年期公債殖利率, aliases: [美債殖利率, 美債], series: GLOBAL:US10Y}
-  - {id: indicator:taiex, type: indicator, name: 加權指數, aliases: [台股大盤, 大盤], series: "TWSE:發行量加權股價指數"}
+  - {id: indicator:us10y, type: indicator, name: 美國十年期公債殖利率, aliases: [美債殖利率, 美債], series: GLOBAL:US10Y, lat: 38.899, lng: -77.034, place: 美國華盛頓特區（財政部）}
+  - {id: indicator:taiex, type: indicator, name: 加權指數, aliases: [台股大盤, 大盤], series: "TWSE:發行量加權股價指數", lat: 25.034, lng: 121.564, place: 台北（證交所）}
   - {id: indicator:oil, type: indicator, name: 國際油價, aliases: [油價, 原油]}
   - {id: indicator:freight, type: indicator, name: 貨櫃運價, aliases: [SCFI, 運價, 上海出口集裝箱運價指數]}
   - {id: indicator:steel, type: indicator, name: 鋼價, aliases: [鋼鐵價格]}
@@ -67,6 +73,33 @@ edges:
   - {src: company:3711, rel: member_of, dst: concept:adv_packaging}
   - {src: company:3008, rel: supplies_to, dst: entity:apple}
   - {src: company:3008, rel: member_of, dst: concept:apple_chain}
+  # 2026-11 補充（全球脈動頁）：只收錄長期、廣泛報導的關係
+  - {src: entity:asml, rel: supplies_to, dst: company:2330, note: 微影設備（EUV／DUV）}
+  - {src: entity:tel, rel: supplies_to, dst: company:2330, note: 塗佈顯影、蝕刻等製程設備}
+  - {src: company:2330, rel: partners, dst: entity:sony, note: 合資日本熊本廠（JASM）}
+  - {src: company:2330, rel: supplies_to, dst: entity:intel, note: 部分處理器晶片委外代工}
+  - {src: company:2382, rel: supplies_to, dst: entity:nvidia, note: AI 伺服器機櫃組裝}
+  - {src: company:3231, rel: supplies_to, dst: entity:nvidia, note: AI 伺服器主機板與模組}
+  - {src: company:2308, rel: supplies_to, dst: entity:nvidia, note: 伺服器電源}
+  - {src: company:3017, rel: supplies_to, dst: entity:nvidia, note: 散熱模組}
+  - {src: company:3037, rel: supplies_to, dst: entity:nvidia, note: ABF 載板}
+  - {src: company:3037, rel: supplies_to, dst: entity:intel, note: ABF 載板}
+  - {src: company:3711, rel: supplies_to, dst: entity:qualcomm, note: 封裝測試}
+  - {src: company:3711, rel: supplies_to, dst: entity:nvidia, note: 封裝測試}
+  - {src: entity:nvidia, rel: supplies_to, dst: company:2357, note: 顯示卡 GPU}
+  - {src: entity:nvidia, rel: supplies_to, dst: company:2376, note: 顯示卡 GPU}
+  - {src: company:4938, rel: supplies_to, dst: entity:apple, note: iPhone 組裝}
+  - {src: company:3406, rel: supplies_to, dst: entity:apple, note: 手機鏡頭}
+  - {src: company:2345, rel: supplies_to, dst: entity:amazon, note: 資料中心交換器}
+  - {src: company:3661, rel: supplies_to, dst: entity:amazon, note: AI 加速器 ASIC 設計服務}
+  - {src: company:2382, rel: supplies_to, dst: entity:google, note: 雲端伺服器}
+  - {src: company:2382, rel: supplies_to, dst: entity:amazon, note: 雲端伺服器}
+  - {src: company:2324, rel: supplies_to, dst: entity:dell, note: 筆電代工}
+  - {src: company:2324, rel: supplies_to, dst: entity:hp, note: 筆電代工}
+  - {src: company:2382, rel: supplies_to, dst: entity:hp, note: 筆電代工}
+  - {src: company:3231, rel: supplies_to, dst: entity:dell, note: 筆電與伺服器代工}
+  - {src: company:2408, rel: competes, dst: entity:micron, note: DRAM}
+  - {src: company:2408, rel: competes, dst: entity:samsung, note: DRAM}
   # 航運、原物料、金融
   - {src: company:2603, rel: member_of, dst: concept:shipping}
   - {src: company:2609, rel: member_of, dst: concept:shipping}

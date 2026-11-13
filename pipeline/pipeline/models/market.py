@@ -23,6 +23,8 @@ class Security(Base):
     first_bar: Mapped[date | None] = mapped_column(Date, nullable=True)
     last_bar: Mapped[date | None] = mapped_column(Date, nullable=True)
     tracked: Mapped[bool] = mapped_column(Boolean, default=False)
+    # 公司登記地址所在的縣市；新竹科學園區單獨列為「新竹科學園區」（見 ingest/company.py parse_city）
+    city: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
 
 class DailyBar(Base):

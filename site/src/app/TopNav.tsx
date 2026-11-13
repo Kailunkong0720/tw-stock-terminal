@@ -12,6 +12,7 @@ const NAV = [
   { to: '/forecast', label: '模型' },
   { to: '/explain', label: '漲跌解析' },
   { to: '/graph', label: '知識圖譜' },
+  { to: '/globe', label: '全球脈動' },
   { to: '/about', label: '關於' },
 ] as const
 

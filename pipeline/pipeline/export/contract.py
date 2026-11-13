@@ -411,8 +411,63 @@ class GraphPropagate(_Model):
     items: list[PropagateItem]
 
 
+class OvernightSeries(_Model):
+    id: str = Field(description="例如 GLOBAL:SOX")
+    name: str
+    unit: Literal["pct", "bp"] = Field(description="pct：報酬率（0.01 = 1%）；bp：殖利率變動（基點）")
+    lat: float
+    lng: float
+    place: str
+    target: Literal["taiex", "tsmc"] = Field(description="弧線落點：加權指數（台北）或台積電（新竹）")
+    values: list[float | None] = Field(
+        description="與日曆對齊（從 start 起）：台股該交易日開盤前、上一個台股交易日之後的海外交易日累積變動；"
+        "期間沒有海外交易日為 null"
+    )
+
+
+class GlobeOvernight(_Model):
+    """data/globe/overnight.json：美股前一晚的變動與台股當天的表現（隔夜傳導）。"""
+
+    start: int
+    series: list[OvernightSeries]
+    taiex: list[float | None] = Field(description="加權指數當日報酬")
+    tsmc: list[float | None] = Field(description="台積電當日報酬（含除權息還原）")
+    landing: dict[str, list[float]] = Field(description="落點座標 [lat, lng]：taiex、tsmc")
+
+
+class GlobePlace(_Model):
+    id: str = Field(description="圖譜節點 id，例如 entity:nvidia、company:2330")
+    name: str
+    type: str = Field(description="global_company / organization / indicator / company")
+    lat: float
+    lng: float
+    place: str = Field(description="地點說明，例如「美國加州聖塔克拉拉」或「新竹科學園區」")
+    symbol: str | None = None
+    industry: str | None = None
+    tracked: bool = False
+
+
+class GlobeLink(_Model):
+    source: str
+    target: str
+    rel: str
+    rel_name: str
+    origin: Literal["seed", "data"] = Field(description="seed：公開資訊人工整理；data：實測股價連動")
+    rho: float | None = Field(default=None, description="實測相關係數（origin 為 data 時）")
+    note: str | None = None
+
+
+class GlobeSupply(_Model):
+    """data/globe/supply.json：全球實體與台股公司的位置，以及兩者之間的關係。"""
+
+    places: list[GlobePlace]
+    links: list[GlobeLink]
+
+
 # 產生 JSON Schema / TypeScript 型別時要包含的頂層模型
 EXPORTED_MODELS: list[type[BaseModel]] = [
+    GlobeOvernight,
+    GlobeSupply,
     GraphCore,
     GraphEgo,
     GraphPropagate,

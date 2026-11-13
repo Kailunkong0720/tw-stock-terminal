@@ -8,6 +8,8 @@ import type {
   Events,
   Flows,
   Forecast,
+  GlobeOvernight,
+  GlobeSupply,
   GraphEgo,
   GraphPropagate,
   Heatmap,
@@ -104,5 +106,7 @@ export const useEvents = (symbol: string, enabled = true) =>
   useDataFile<Events>(enabled ? `events/${symbol}.json` : null, ['events', symbol])
 export const useTimeline = () => useDataFile<Timeline>('events/timeline.json', ['timeline'])
 export const useEgo = (symbol: string) => useDataFile<GraphEgo>(`graph/ego/${symbol}.json`, ['ego', symbol])
+export const useGlobeOvernight = () => useDataFile<GlobeOvernight>('globe/overnight.json', ['globe-overnight'])
+export const useGlobeSupply = () => useDataFile<GlobeSupply>('globe/supply.json', ['globe-supply'])
 export const usePropagate = (nodeId: string | null) =>
   useDataFile<GraphPropagate>(nodeId ? `graph/propagate/${nodeId.replace(':', '_')}.json` : null, ['propagate', nodeId])

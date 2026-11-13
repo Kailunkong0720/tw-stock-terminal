@@ -103,7 +103,7 @@ def build_graph(settings: Settings) -> None:
             if e[k].startswith("industry:") and e[k] not in nodes:
                 node(e[k], "industry", e[k].split(":", 1)[1])
         if e["src"] in nodes and e["dst"] in nodes:
-            edge(e["src"], e["rel"], e["dst"], src_tag, 0.9)
+            edge(e["src"], e["rel"], e["dst"], src_tag, 0.9, note=e.get("note"))
         else:
             log.warning("種子關係的節點不存在，略過：%s %s %s", e["src"], e["rel"], e["dst"])
 

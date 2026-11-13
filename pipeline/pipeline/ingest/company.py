@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from sqlalchemy import func, select
 
@@ -27,6 +28,46 @@ TRACKED_ETFS = ["0050", "0056", "00878", "006208"]
 TRACKED_STOCKS = 150
 
 
+CITIES = [
+    "台北市", "新北市", "桃園市", "台中市", "台南市", "高雄市", "基隆市", "新竹市", "嘉義市",
+    "新竹縣", "苗栗縣", "彰化縣", "南投縣", "雲林縣", "嘉義縣", "屏東縣", "宜蘭縣", "花蓮縣", "台東縣", "澎湖縣",
+]  # fmt: skip
+SCIENCE_PARK = "新竹科學園區"
+# 外國企業（-KY）的登記地址在開曼群島等地，改用英文通訊地址（多在台灣）判斷
+EN_CITIES = [
+    ("new taipei", "新北市"), ("taipei", "台北市"), ("taoyuan", "桃園市"), ("hsinchu science", SCIENCE_PARK),
+    ("hsinchu county", "新竹縣"), ("zhubei", "新竹縣"), ("hsinchu", "新竹市"), ("taichung", "台中市"),
+    ("tainan", "台南市"), ("kaohsiung", "高雄市"), ("keelung", "基隆市"), ("changhua", "彰化縣"),
+    ("miaoli", "苗栗縣"), ("pingtung", "屏東縣"), ("yunlin", "雲林縣"), ("nantou", "南投縣"), ("chiayi", "嘉義市"),
+    ("yilan", "宜蘭縣"), ("hualien", "花蓮縣"), ("taitung", "台東縣"),
+]  # fmt: skip
+
+
+def parse_city(addr: str | None, en_addr: str | None = None) -> str | None:
+    """公司地址 → 縣市。新竹科學園區（竹科）單獨一類；竹南、竹北園區歸到所在縣。"""
+    a = (addr or "").replace("臺", "台").replace("巿", "市").strip()
+    hits = [(a.find(c), c) for c in CITIES if c in a]
+    first = min(hits)[1] if hits else None
+    park = re.search(r"(新竹|中部|南部)科學(工業)?園區", a)
+    if park and park.group(1) == "新竹":
+        if "苗栗縣" in a or "竹南" in a:
+            return "苗栗縣"
+        if "新竹縣" in a or "竹北" in a:
+            return "新竹縣"
+        return SCIENCE_PARK
+    if park:
+        return first or {"中部": "台中市", "南部": "台南市"}[park.group(1)]
+    if a.lstrip("0123456789()（） ").startswith("北市"):
+        return "台北市"
+    if first:
+        return first
+    en = (en_addr or "").lower()
+    for key, city in EN_CITIES:
+        if key in en:
+            return city
+    return None
+
+
 def parse_company(rows: list[dict]) -> dict[str, dict]:
     from datetime import date
 
@@ -43,6 +84,7 @@ def parse_company(rows: list[dict]) -> dict[str, dict]:
             "industry": industry_name(r.get("產業別")),
             "listed_on": listed_on,
             "shares": to_int(r.get("已發行普通股數或TDR原股發行股數")),
+            "city": parse_city(r.get("住址"), r.get("英文通訊地址")),
         }
     return out
 
@@ -58,6 +100,7 @@ def ingest_company(settings: Settings) -> dict[str, dict]:
             if meta:
                 sec.industry = meta["industry"]
                 sec.listed_on = meta["listed_on"]
+                sec.city = meta["city"]
                 n += 1
             elif sec.kind == "etf":
                 sec.industry = "ETF"

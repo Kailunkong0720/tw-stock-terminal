@@ -99,6 +99,9 @@ def run_export(settings: Settings) -> ExportWriter:
         from pipeline.export.graph import export_graph
 
         export_graph(get_engine(settings), writer, exporter.calendar[-1])
+        from pipeline.export.globe import export_globe
+
+        export_globe(get_engine(settings), writer, exporter.calendar)
     # 資料截止日 = 這次輸出的日曆最後一天（回補程序可能同時在寫入更新的日子）
     as_of = exporter.calendar[-1] if exporter.calendar else None
     writer.write("meta.json", build_meta(settings, as_of))
