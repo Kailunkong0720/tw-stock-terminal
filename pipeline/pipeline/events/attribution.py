@@ -105,6 +105,57 @@ def build_market_events(settings: Settings) -> int:
     return len(rows)
 
 
+ACTION_EVENT = {
+    "etf_split": ("split", "ETF 分割"),
+    "etf_reverse_split": ("split", "ETF 反分割"),
+    "par_change": ("split", "變更面額"),
+    "capital_reduction": ("capital_reduction", "減資"),
+}
+
+
+def build_action_events(settings: Settings) -> int:
+    """由證交所的分割、面額變更、減資報表產生官方事件（恢復買賣日），不依賴 MOPS。
+
+    ETF 不是公司，MOPS 沒有它的公告；用交易所資料確保每一次分割都有對應事件。
+    """
+    engine = get_engine(settings)
+    acts = pd.read_sql_query(
+        "SELECT symbol, ex_date, type, prev_close, ref_price, detail FROM corporate_action WHERE type IN :t".replace(
+            ":t", "(" + ",".join(f"'{t}'" for t in ACTION_EVENT) + ")"
+        ),
+        engine,
+    )
+    n = 0
+    with session_scope(settings) as s:
+        for r in acts.itertuples():
+            ex = pd.Timestamp(r.ex_date).date()
+            type_, label = ACTION_EVENT[r.type]
+            ratio = r.prev_close / r.ref_price if r.ref_price else None
+            how = (
+                f"（約 1 拆 {ratio:.0f}）"
+                if ratio and ratio > 1.5
+                else f"（約 {1 / ratio:.0f} 合 1）"
+                if ratio and ratio < 0.67
+                else ""
+            )
+            vals = {
+                "uid": f"twse:action:{r.symbol}:{ex.isoformat()}:{r.type}",
+                "symbol": r.symbol,
+                "at": datetime.combine(ex, time(9, 0)),
+                "trade_date": ex,
+                "level": "official",
+                "type": type_,
+                "direction": 0,
+                "title": f"{label}後恢復買賣{how}：前收 {r.prev_close:g}，參考價 {r.ref_price:g}",
+                "source": "證交所",
+                "url": None,
+                "detail": r.detail,
+            }
+            s.execute(insert(Event).values(**vals).on_conflict_do_update(index_elements=["uid"], set_=vals))
+            n += 1
+    return n
+
+
 def type_priors(moves: pd.DataFrame, events: pd.DataFrame) -> dict[str, float]:
     """事件類型先驗：該類事件影響日的平均 |個股特有報酬| ÷ 全部日子的平均，壓到 0–1。"""
     base = moves["idio"].abs().mean()
@@ -143,6 +194,8 @@ def attribute(settings: Settings) -> None:
     if n_re:
         log.info("依目前規則重新分類 %d 則公告", n_re)
     n_market = build_market_events(settings)
+    n_actions = build_action_events(settings)
+    log.info("由證交所報表產生分割／面額變更／減資事件 %d 個", n_actions)
     calendar = trading_calendar(engine)
     cal_idx = {d: i for i, d in enumerate(calendar)}
 

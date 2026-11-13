@@ -29,6 +29,9 @@ from pipeline.ingest.mops import effective_trade_date, parse_t05st01
         ("代子公司NHOA S.A.公告董事會決議增資NHOA Energy s.r.l.", "investment", 0),
         ("本公司參與認購飛宏科技股份有限公司私募普通股股份", "investment", 0),
         ("本公司董事會決議召開民國114年股東常會", "shareholder", 0),
+        ("公告本公司111年1月份自結合併盈餘", "earnings", 0),
+        ("公告本公司2022年6月合併營業額", "revenue", 0),
+        ("公告本公司2022年第2季自結合併損益", "earnings", 0),
     ],
 )
 def test_classify(title, type_, direction):
