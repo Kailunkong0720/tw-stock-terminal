@@ -80,6 +80,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\refresh_publish.ps1 
 - flows 與 mops 完成後執行一次 `scripts\refresh_publish.ps1`；回測完成後再執行一次
 - 新聞來源已定：**GDELT DOC 2.0、最近三個月**（2026-11-13 使用者決定），可以實作與回補：一輪抓完存起來，不重複抓（2026-11-13 上午本機被 GDELT 限流 429，要長時間退避）；**不做** LLM 抽取（2026-11-13 使用者沒有 API 金鑰；新聞標題用規則分類）
 - 3D 地球已完成（隔夜傳導＋全球供應鏈）；分析說明已完成（每項分析的方法／計算時間／資料期間）
+- **上櫃**（2026-11-13 使用者要求）：背景 `ingest tpex tpex-flows`（鎖 net-tpex，輸出 data\logs\bg-tpex-tpex-flows.out，預計 15:15 完成）。完成後：`uv run python -m pipeline check`（還原後漲跌幅不變量，上櫃的例外要查清楚）→ `scripts\refresh_publish.ps1`。中斷就用 start_bg.ps1 "ingest tpex tpex-flows" 續跑
 - **GDELT 新聞尚未抓到**（2026-11-13 10:15–11:10 這台電腦的每個請求都被回 429，沒有 Retry-After）。接續時：`uv run python -m pipeline status` 的抓取紀錄裡沒有 `gdelt_doc [ok]` 就執行 `scripts\start_bg.ps1 "ingest news"`（仍被限流會在第一個請求後立刻結束，不會猛打）；成功抓完後執行 `scripts\refresh_publish.ps1` 讓新聞進入歸因並發布。連續一整天都 429 就寫 WAITING_FOR_USER.md 跟使用者討論
 - 可以做的：Phase 4 驗收（追蹤池 z 最高的 10 天歸因結果表）、Phase 6 收尾（快捷鍵總表、程式碼分割、行動裝置）、上櫃資料（TPEx 端點需驗證）
 - 電腦會睡眠：長時間指令已用 SetThreadExecutionState 防閒置睡眠；闔上筆電仍會中斷，重新執行同一指令即可續跑

@@ -33,6 +33,8 @@ Invoke-Step '行情、公司行動、公司基本資料（證交所）' @('inges
 Invoke-Step '三大法人與外資持股（證交所）' @('ingest', 'flows')
 Invoke-Step '海外指數（Yahoo Finance）' @('ingest', 'global')
 Invoke-Step '重大訊息（公開資訊觀測站）' @('ingest', 'mops')
+Invoke-Step '上櫃行情、櫃買指數、公司基本資料、公司行動（櫃買中心）' @('ingest', 'tpex', 'tpex-actions')
+Invoke-Step '上櫃三大法人與外資持股（櫃買中心）' @('ingest', 'tpex-flows')
 Invoke-Step '漲跌拆解、事件歸因、知識圖譜' @('moves')
 Invoke-Step '媒體新聞（GDELT，最近三個月的大波動日）' @('ingest', 'news')
 Invoke-Step '加入新聞後重算事件歸因與知識圖譜' @('attribution')
