@@ -8,6 +8,8 @@ import type {
   Events,
   Flows,
   Forecast,
+  GraphEgo,
+  GraphPropagate,
   MarketFlows,
   Meta,
   Moves,
@@ -97,3 +99,6 @@ export const useMoves = (symbol: string) => useDataFile<Moves>(`moves/${symbol}.
 export const useEvents = (symbol: string, enabled = true) =>
   useDataFile<Events>(enabled ? `events/${symbol}.json` : null, ['events', symbol])
 export const useTimeline = () => useDataFile<Timeline>('events/timeline.json', ['timeline'])
+export const useEgo = (symbol: string) => useDataFile<GraphEgo>(`graph/ego/${symbol}.json`, ['ego', symbol])
+export const usePropagate = (nodeId: string | null) =>
+  useDataFile<GraphPropagate>(nodeId ? `graph/propagate/${nodeId.replace(':', '_')}.json` : null, ['propagate', nodeId])

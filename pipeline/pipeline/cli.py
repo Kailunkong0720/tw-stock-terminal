@@ -78,9 +78,11 @@ def _step_mops(s: Settings) -> None:
 def _step_moves(s: Settings) -> None:
     from pipeline.events.attribution import attribute
     from pipeline.events.factor_model import compute_moves
+    from pipeline.kg.build import build_graph
 
     compute_moves(s)
     attribute(s)
+    build_graph(s)
 
 
 # 會對外發請求的步驟，依序執行。

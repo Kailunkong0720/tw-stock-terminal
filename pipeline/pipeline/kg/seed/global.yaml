@@ -1,0 +1,101 @@
+# 知識圖譜種子（PLAN.md 6.3 建置順序 1）
+#
+# 只收錄公開、廣為人知的關係（公司年報、法說會、主流媒體長期報導）。不確定的不放。
+# 每條關係都標 source；網站上以實線顯示種子關係，與日後 LLM 從新聞抽出的關係（虛線）區分。
+# id 規則：entity:（海外公司）、org:（機構）、country:、indicator:（市場指標）、concept:（題材）、
+#          company:<代號>（台股，由管線依證券清單建立）、industry:<產業名>（由管線建立）
+
+source: 人工整理（公開資訊，2026-11）
+
+nodes:
+  - {id: entity:nvidia, type: global_company, name: 輝達, aliases: [NVIDIA, 英偉達, 輝達]}
+  - {id: entity:apple, type: global_company, name: 蘋果, aliases: [Apple, 蘋果公司]}
+  - {id: entity:amd, type: global_company, name: 超微, aliases: [AMD, 超微半導體]}
+  - {id: entity:broadcom, type: global_company, name: 博通, aliases: [Broadcom]}
+  - {id: entity:qualcomm, type: global_company, name: 高通, aliases: [Qualcomm]}
+  - {id: entity:intel, type: global_company, name: 英特爾, aliases: [Intel]}
+  - {id: entity:microsoft, type: global_company, name: 微軟, aliases: [Microsoft]}
+  - {id: entity:google, type: global_company, name: Google, aliases: [Alphabet, 谷歌]}
+  - {id: entity:amazon, type: global_company, name: 亞馬遜, aliases: [Amazon, AWS]}
+  - {id: entity:meta, type: global_company, name: Meta, aliases: [臉書, Facebook]}
+  - {id: entity:samsung, type: global_company, name: 三星, aliases: [Samsung, 三星電子]}
+  - {id: entity:tesla, type: global_company, name: 特斯拉, aliases: [Tesla]}
+  - {id: org:fed, type: organization, name: 聯準會, aliases: [Fed, 美國聯準會, 美國聯邦準備理事會]}
+  - {id: org:us_commerce, type: organization, name: 美國商務部, aliases: [商務部, BIS, 美國商務部工業與安全局]}
+  - {id: country:us, type: country, name: 美國, aliases: [US, USA]}
+  - {id: country:china, type: country, name: 中國, aliases: [中國大陸, 大陸]}
+  - {id: indicator:sox, type: indicator, name: 費城半導體指數, aliases: [費半, SOX], series: GLOBAL:SOX}
+  - {id: indicator:nasdaq, type: indicator, name: 那斯達克, aliases: [Nasdaq, 那指], series: GLOBAL:NASDAQ}
+  - {id: indicator:usdtwd, type: indicator, name: 美元兌台幣, aliases: [新台幣匯率, 台幣], series: GLOBAL:USDTWD}
+  - {id: indicator:us10y, type: indicator, name: 美國十年期公債殖利率, aliases: [美債殖利率, 美債], series: GLOBAL:US10Y}
+  - {id: indicator:taiex, type: indicator, name: 加權指數, aliases: [台股大盤, 大盤], series: "TWSE:發行量加權股價指數"}
+  - {id: indicator:oil, type: indicator, name: 國際油價, aliases: [油價, 原油]}
+  - {id: indicator:freight, type: indicator, name: 貨櫃運價, aliases: [SCFI, 運價, 上海出口集裝箱運價指數]}
+  - {id: indicator:steel, type: indicator, name: 鋼價, aliases: [鋼鐵價格]}
+  - {id: concept:ai_server, type: concept, name: AI 伺服器, aliases: [AI伺服器, 人工智慧伺服器]}
+  - {id: concept:adv_packaging, type: concept, name: 先進封裝, aliases: [CoWoS, 先進封測]}
+  - {id: concept:apple_chain, type: concept, name: 蘋果供應鏈, aliases: [蘋概股]}
+  - {id: concept:shipping, type: concept, name: 貨櫃航運, aliases: [航運三雄, 貨櫃三雄]}
+  - {id: concept:rates, type: concept, name: 利率敏感, aliases: [壽險, 金融股]}
+
+edges:
+  # 晶圓代工客戶
+  - {src: company:2330, rel: supplies_to, dst: entity:nvidia}
+  - {src: company:2330, rel: supplies_to, dst: entity:apple}
+  - {src: company:2330, rel: supplies_to, dst: entity:amd}
+  - {src: company:2330, rel: supplies_to, dst: entity:qualcomm}
+  - {src: company:2330, rel: supplies_to, dst: entity:broadcom}
+  - {src: company:2330, rel: competes, dst: entity:samsung}
+  - {src: company:2330, rel: competes, dst: entity:intel}
+  - {src: company:2330, rel: member_of, dst: concept:adv_packaging}
+  - {src: company:2330, rel: member_of, dst: concept:ai_server}
+  - {src: company:2330, rel: member_of, dst: concept:apple_chain}
+  # 組裝與伺服器
+  - {src: company:2317, rel: supplies_to, dst: entity:apple}
+  - {src: company:2317, rel: supplies_to, dst: entity:nvidia}
+  - {src: company:2317, rel: member_of, dst: concept:apple_chain}
+  - {src: company:2317, rel: member_of, dst: concept:ai_server}
+  - {src: company:2382, rel: member_of, dst: concept:ai_server}
+  - {src: company:3231, rel: member_of, dst: concept:ai_server}
+  - {src: company:6669, rel: member_of, dst: concept:ai_server}
+  - {src: company:6669, rel: supplies_to, dst: entity:microsoft}
+  - {src: company:6669, rel: supplies_to, dst: entity:meta}
+  - {src: company:2356, rel: member_of, dst: concept:ai_server}
+  - {src: company:2308, rel: member_of, dst: concept:ai_server}
+  # IC 設計、封測、光學
+  - {src: company:2454, rel: competes, dst: entity:qualcomm}
+  - {src: company:3711, rel: member_of, dst: concept:adv_packaging}
+  - {src: company:3008, rel: supplies_to, dst: entity:apple}
+  - {src: company:3008, rel: member_of, dst: concept:apple_chain}
+  # 航運、原物料、金融
+  - {src: company:2603, rel: member_of, dst: concept:shipping}
+  - {src: company:2609, rel: member_of, dst: concept:shipping}
+  - {src: company:2615, rel: member_of, dst: concept:shipping}
+  - {src: concept:shipping, rel: sensitive_to, dst: indicator:freight}
+  - {src: company:2002, rel: sensitive_to, dst: indicator:steel}
+  - {src: company:1301, rel: sensitive_to, dst: indicator:oil}
+  - {src: company:1303, rel: sensitive_to, dst: indicator:oil}
+  - {src: company:1326, rel: sensitive_to, dst: indicator:oil}
+  - {src: company:6505, rel: sensitive_to, dst: indicator:oil}
+  - {src: company:2881, rel: member_of, dst: concept:rates}
+  - {src: company:2882, rel: member_of, dst: concept:rates}
+  - {src: company:2891, rel: member_of, dst: concept:rates}
+  - {src: company:2886, rel: member_of, dst: concept:rates}
+  - {src: concept:rates, rel: sensitive_to, dst: indicator:us10y}
+  # 總體與政策
+  - {src: org:fed, rel: influences, dst: indicator:us10y}
+  - {src: org:fed, rel: influences, dst: indicator:usdtwd}
+  - {src: org:us_commerce, rel: regulates, dst: entity:nvidia}
+  - {src: org:us_commerce, rel: regulates, dst: company:2330}
+  - {src: org:us_commerce, rel: part_of, dst: country:us}
+  - {src: entity:nvidia, rel: member_of, dst: concept:ai_server}
+  - {src: entity:nvidia, rel: component_of, dst: indicator:sox}
+  - {src: entity:amd, rel: component_of, dst: indicator:sox}
+  - {src: entity:intel, rel: component_of, dst: indicator:sox}
+  - {src: entity:qualcomm, rel: component_of, dst: indicator:sox}
+  - {src: entity:broadcom, rel: component_of, dst: indicator:sox}
+  - {src: industry:半導體, rel: sensitive_to, dst: indicator:sox}
+  - {src: industry:電子零組件, rel: sensitive_to, dst: indicator:nasdaq}
+  - {src: industry:電腦及週邊設備, rel: sensitive_to, dst: indicator:nasdaq}
+  - {src: indicator:sox, rel: part_of, dst: country:us}
+  - {src: indicator:nasdaq, rel: part_of, dst: country:us}

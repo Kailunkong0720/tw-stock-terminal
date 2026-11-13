@@ -4,6 +4,9 @@
  * tw-stock-terminal 靜態資料契約（由 pipeline 自動產生，請勿手改）
  */
 export interface Contract {
+  GraphCore?: GraphCore;
+  GraphEgo?: GraphEgo;
+  GraphPropagate?: GraphPropagate;
   Moves?: Moves;
   Events?: Events;
   Timeline?: Timeline;
@@ -18,6 +21,75 @@ export interface Contract {
   MarketFlows?: MarketFlows;
   IndustryFlows?: IndustryFlows;
   Overview?: Overview;
+}
+/**
+ * data/graph/core.json：種子圖與由資料算出的靜態關係。
+ */
+export interface GraphCore {
+  nodes: GraphNode[];
+  links: GraphLink[];
+}
+export interface GraphNode {
+  id: string;
+  /**
+   * company / industry / concept / global_company / organization / country / indicator / event / move
+   */
+  type: string;
+  name: string;
+  attrs: {
+    [k: string]: string | number | boolean | null;
+  };
+}
+export interface GraphLink {
+  source: string;
+  target: string;
+  rel: string;
+  rel_name: string;
+  confidence: number;
+  /**
+   * seed：人工整理；data：由資料算出；official／market／media：事件；llm：模型從新聞抽取（虛線）
+   */
+  origin: "seed" | "data" | "official" | "market" | "media" | "llm";
+  date: string | null;
+  note: string | null;
+}
+/**
+ * data/graph/ego/{symbol}.json：以一檔股票為中心的子圖（含事件與異常波動，可依日期過濾）。
+ */
+export interface GraphEgo {
+  center: string;
+  nodes: GraphNode[];
+  links: GraphLink[];
+  paths: GraphPath[];
+}
+export interface GraphPath {
+  /**
+   * 異常波動節點 id
+   */
+  move: string;
+  /**
+   * 解釋路徑上的節點（依序），相鄰節點之間有連線
+   */
+  nodes: string[];
+}
+/**
+ * data/graph/propagate/{node}.json：一個全球實體或指標變動時，可能受影響的台股。
+ */
+export interface GraphPropagate {
+  node: GraphNode;
+  items: PropagateItem[];
+}
+export interface PropagateItem {
+  symbol: string;
+  name: string;
+  /**
+   * 傳導路徑的文字說明
+   */
+  via: string;
+  /**
+   * 與該指標的實測相關係數（近 500 個交易日）
+   */
+  rho: number | null;
 }
 /**
  * data/moves/{symbol}.json：異常波動日與可能相關的事件。

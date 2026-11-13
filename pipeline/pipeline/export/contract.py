@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import datetime as _dt
 from datetime import date, datetime
 from typing import Literal
 
@@ -330,8 +331,69 @@ class Timeline(_Model):
     moves: list[TimelineMove]
 
 
+class GraphNode(_Model):
+    id: str
+    type: str = Field(
+        description="company / industry / concept / global_company / organization / country / indicator / event / move"
+    )
+    name: str
+    attrs: dict[str, str | float | int | bool | None] = Field(default_factory=dict)
+
+
+class GraphLink(_Model):
+    source: str
+    target: str
+    rel: str
+    rel_name: str
+    confidence: float
+    origin: Literal["seed", "data", "official", "market", "media", "llm"] = Field(
+        description="seed：人工整理；data：由資料算出；official／market／media：事件；llm：模型從新聞抽取（虛線）"
+    )
+    # 欄位名稱與型別同名，型別寫成 _dt.date，否則預設值 None 會遮蔽 date 型別
+    date: _dt.date | None = None
+    note: str | None = None
+
+
+class GraphPath(_Model):
+    move: str = Field(description="異常波動節點 id")
+    nodes: list[str] = Field(description="解釋路徑上的節點（依序），相鄰節點之間有連線")
+
+
+class GraphCore(_Model):
+    """data/graph/core.json：種子圖與由資料算出的靜態關係。"""
+
+    nodes: list[GraphNode]
+    links: list[GraphLink]
+
+
+class GraphEgo(_Model):
+    """data/graph/ego/{symbol}.json：以一檔股票為中心的子圖（含事件與異常波動，可依日期過濾）。"""
+
+    center: str
+    nodes: list[GraphNode]
+    links: list[GraphLink]
+    paths: list[GraphPath]
+
+
+class PropagateItem(_Model):
+    symbol: str
+    name: str
+    via: str = Field(description="傳導路徑的文字說明")
+    rho: float | None = Field(description="與該指標的實測相關係數（近 500 個交易日）")
+
+
+class GraphPropagate(_Model):
+    """data/graph/propagate/{node}.json：一個全球實體或指標變動時，可能受影響的台股。"""
+
+    node: GraphNode
+    items: list[PropagateItem]
+
+
 # 產生 JSON Schema / TypeScript 型別時要包含的頂層模型
 EXPORTED_MODELS: list[type[BaseModel]] = [
+    GraphCore,
+    GraphEgo,
+    GraphPropagate,
     Moves,
     Events,
     Timeline,

@@ -5,6 +5,15 @@
   "x-contract-version": 1,
   "type": "object",
   "properties": {
+    "GraphCore": {
+      "$ref": "#/$defs/GraphCore"
+    },
+    "GraphEgo": {
+      "$ref": "#/$defs/GraphEgo"
+    },
+    "GraphPropagate": {
+      "$ref": "#/$defs/GraphPropagate"
+    },
     "Moves": {
       "$ref": "#/$defs/Moves"
     },
@@ -50,6 +59,254 @@
   },
   "additionalProperties": false,
   "$defs": {
+    "GraphLink": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "rel": {
+          "type": "string"
+        },
+        "rel_name": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "number"
+        },
+        "origin": {
+          "description": "seed：人工整理；data：由資料算出；official／market／media：事件；llm：模型從新聞抽取（虛線）",
+          "enum": [
+            "seed",
+            "data",
+            "official",
+            "market",
+            "media",
+            "llm"
+          ],
+          "type": "string"
+        },
+        "date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "source",
+        "target",
+        "rel",
+        "rel_name",
+        "confidence",
+        "origin",
+        "date",
+        "note"
+      ],
+      "title": "GraphLink",
+      "type": "object"
+    },
+    "GraphNode": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "description": "company / industry / concept / global_company / organization / country / indicator / event / move",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "attrs": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "name",
+        "attrs"
+      ],
+      "title": "GraphNode",
+      "type": "object"
+    },
+    "GraphCore": {
+      "additionalProperties": false,
+      "description": "data/graph/core.json：種子圖與由資料算出的靜態關係。",
+      "properties": {
+        "nodes": {
+          "items": {
+            "$ref": "#/$defs/GraphNode"
+          },
+          "type": "array"
+        },
+        "links": {
+          "items": {
+            "$ref": "#/$defs/GraphLink"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "nodes",
+        "links"
+      ],
+      "title": "GraphCore",
+      "type": "object"
+    },
+    "GraphPath": {
+      "additionalProperties": false,
+      "properties": {
+        "move": {
+          "description": "異常波動節點 id",
+          "type": "string"
+        },
+        "nodes": {
+          "description": "解釋路徑上的節點（依序），相鄰節點之間有連線",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "move",
+        "nodes"
+      ],
+      "title": "GraphPath",
+      "type": "object"
+    },
+    "GraphEgo": {
+      "additionalProperties": false,
+      "description": "data/graph/ego/{symbol}.json：以一檔股票為中心的子圖（含事件與異常波動，可依日期過濾）。",
+      "properties": {
+        "center": {
+          "type": "string"
+        },
+        "nodes": {
+          "items": {
+            "$ref": "#/$defs/GraphNode"
+          },
+          "type": "array"
+        },
+        "links": {
+          "items": {
+            "$ref": "#/$defs/GraphLink"
+          },
+          "type": "array"
+        },
+        "paths": {
+          "items": {
+            "$ref": "#/$defs/GraphPath"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "center",
+        "nodes",
+        "links",
+        "paths"
+      ],
+      "title": "GraphEgo",
+      "type": "object"
+    },
+    "PropagateItem": {
+      "additionalProperties": false,
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "via": {
+          "description": "傳導路徑的文字說明",
+          "type": "string"
+        },
+        "rho": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "與該指標的實測相關係數（近 500 個交易日）"
+        }
+      },
+      "required": [
+        "symbol",
+        "name",
+        "via",
+        "rho"
+      ],
+      "title": "PropagateItem",
+      "type": "object"
+    },
+    "GraphPropagate": {
+      "additionalProperties": false,
+      "description": "data/graph/propagate/{node}.json：一個全球實體或指標變動時，可能受影響的台股。",
+      "properties": {
+        "node": {
+          "$ref": "#/$defs/GraphNode"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/PropagateItem"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "node",
+        "items"
+      ],
+      "title": "GraphPropagate",
+      "type": "object"
+    },
     "Candidate": {
       "additionalProperties": false,
       "description": "某個異常波動日的候選事件（可能相關，不是原因）。",

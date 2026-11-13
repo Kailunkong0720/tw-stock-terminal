@@ -4,6 +4,7 @@ from pipeline.models.base import Base
 from pipeline.models.events import Attribution, Event
 from pipeline.models.forecast import ForecastRun, ForecastStep
 from pipeline.models.ingest import IngestLog
+from pipeline.models.kg import KgEdge, KgNode
 from pipeline.models.market import (
     CorporateAction,
     DailyBar,
@@ -26,6 +27,8 @@ __all__ = [
     "ForeignHolding",
     "IndexBar",
     "IngestLog",
+    "KgEdge",
+    "KgNode",
     "InstitutionalFlow",
     "MarketFlow",
     "PriceMove",

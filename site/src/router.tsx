@@ -10,6 +10,7 @@ import { AppShell } from './app/AppShell'
 import { AboutPage } from './features/about/AboutPage'
 import { ExplainDetailPage, ExplainIndexPage } from './features/explain/ExplainPages'
 import { ForecastPage } from './features/forecast/ForecastPage'
+import { GraphPage } from './features/graph/GraphPage'
 import { MarketPage } from './features/market/MarketPage'
 import { SectionPage } from './features/placeholder/SectionPage'
 import { StockPage } from './features/stock/StockPage'
@@ -43,13 +44,8 @@ const routes = [
   createRoute({ getParentRoute: () => rootRoute, path: '/forecast', component: ForecastPage }),
   createRoute({ getParentRoute: () => rootRoute, path: '/explain', component: ExplainIndexPage }),
   createRoute({ getParentRoute: () => rootRoute, path: '/explain/$symbol/$date', component: ExplainDetailPage }),
-  createRoute({
-    getParentRoute: () => rootRoute,
-    path: '/graph',
-    component: () => (
-      <SectionPage title="知識圖譜" detail="公司、產業、全球實體與事件之間的關係，以及每次大波動的解釋路徑。" />
-    ),
-  }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/graph', component: GraphPage }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/graph/$symbol', component: GraphPage }),
   createRoute({ getParentRoute: () => rootRoute, path: '/about', component: AboutPage }),
 ]
 
