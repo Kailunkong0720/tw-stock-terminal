@@ -225,7 +225,7 @@ def build_analyses(
                 ),
                 params=[
                     f"查詢：{nw['params'].get('query', '')}（以公司名稱代入）",
-                    f"每次最多 {nw['params'].get('max_records', '')} 則；請求間隔 6 秒",
+                    f"每次最多 {nw['params'].get('max_records', '')} 則；請求間隔 30 秒",
                     "GDELT 只保留最近三個月，所以更早的大波動日只有官方公告與市場事件",
                 ],
                 inputs=[news_line],

@@ -4,7 +4,7 @@
 - 每個（股票, 大波動日）查一次：時間窗是前一個交易日 13:30 到當天 13:30（台北），也就是可能影響當天的消息。
 - 只存標題、來源網域、連結、時間（PLAN.md 第 10 節：不轉載全文）。
 - 回應存在磁碟快取，抓過的組合記在 ingest_log，重跑不會重複請求；之後每季更新只會補新的大波動日。
-- GDELT 要求每 5 秒最多一次請求；被限流（429）時長時間退避。
+- GDELT 公告每 5 秒一次，但實測短時間連續請求就會被限流（429）：每 30 秒一次，被限流時退避 2–15 分鐘。
 """
 
 from __future__ import annotations
@@ -34,6 +34,7 @@ URL = "https://api.gdeltproject.org/api/v2/doc/doc"
 COMPANY_URL = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L"
 LOOKBACK_DAYS = 88  # GDELT 只保留最近三個月，留一點餘裕
 MAX_RECORDS = 75
+INTERVAL = 30.0  # 秒；GDELT 實際的限流比公告的每 5 秒嚴格
 TPE = ZoneInfo("Asia/Taipei")
 UTC = ZoneInfo("UTC")
 CLOSE = time(13, 30)
@@ -136,13 +137,13 @@ def ingest_news(settings: Settings, today: date | None = None) -> None:
     log.info("媒體新聞（GDELT）：最近三個月的大波動日 %d 個，待查 %d 個", len(days), len(jobs))
     if not jobs or not gdelt_available():
         return
-    time_mod.sleep(6)  # 檢查用的請求也算一次，遵守 5 秒間隔
+    time_mod.sleep(INTERVAL)  # 檢查用的請求也算一次
 
     n_rows = 0
     with HttpClient(
         settings.http_cache_dir,
-        intervals={"api.gdeltproject.org": 6.0},
-        base_backoff=60.0,
+        intervals={"api.gdeltproject.org": INTERVAL},
+        base_backoff=120.0,
         max_backoff=900.0,
         max_attempts=7,
     ) as http:
