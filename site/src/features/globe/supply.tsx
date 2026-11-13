@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 
 import { alpha, type ChartTheme } from '../../charts/theme'
 import { EmptyState, Panel } from '../../design/Panel'
+import { Provenance } from '../../design/Provenance'
 import type { GlobeArc, GlobePoint, GlobeTag, GlobeView } from '../../globe/GlobeCanvas'
 import type { GlobeLink, GlobePlace, GlobeSupply } from '../../lib/contract/types'
 
@@ -265,6 +266,7 @@ export function SupplySide({ data, m }: { data: GlobeSupply; m: SupplyModel }) {
         <p>流動的線：供應或合作關係，光點從供應方流向客戶。實線：競爭。點線：股價實測連動（從指標指向台股）。</p>
         <p>台股公司依登記地址放在所在縣市，新竹科學園區單獨一區；同一地點的公司以螺旋排開。</p>
         <p>關係只收錄公開資訊中長期、廣泛報導者，不代表完整的客戶或供應商名單。</p>
+        <Provenance ids={['graph']} className="border-t border-line pt-2" />
       </Panel>
     </>
   )

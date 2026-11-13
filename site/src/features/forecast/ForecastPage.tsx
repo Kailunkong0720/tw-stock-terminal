@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 
 import { EmptyState, Panel } from '../../design/Panel'
+import { Provenance } from '../../design/Provenance'
 import { Segmented } from '../../design/Segmented'
 import type { RankingItem, TrackRecord } from '../../lib/contract/types'
 import { useRanking } from '../../lib/data'
@@ -201,6 +202,7 @@ export function ForecastPage() {
           </ul>
           <p>沒有回測優勢的標的，標籤一律顯示為灰色。</p>
           <p className="text-text-2">此為統計模型的輸出，不構成投資建議。</p>
+          <Provenance ids={['forecast', 'backtest']} className="border-t border-line pt-2" />
         </Panel>
       </div>
     </div>

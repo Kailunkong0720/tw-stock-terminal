@@ -1459,6 +1459,127 @@
       "title": "Ranking",
       "type": "object"
     },
+    "AnalysisInfo": {
+      "additionalProperties": false,
+      "description": "一項分析的說明：用什麼方法、什麼時候算的、用哪段資料（網站「分析說明」）。",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "method": {
+          "description": "方法說明",
+          "type": "string"
+        },
+        "params": {
+          "description": "參數與門檻（條列）",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "inputs": {
+          "description": "使用的資料與來源（條列）",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "data_from": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "使用資料的第一天"
+        },
+        "data_to": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "使用資料的最後一天"
+        },
+        "run_first": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "這份結果最早的計算時間（分多次算完時）"
+        },
+        "run_last": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "最近一次計算完成的時間"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "結果摘要，例如樣本數"
+        },
+        "page": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "呈現這項分析的頁面（站內路徑）"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "method",
+        "params",
+        "inputs",
+        "data_from",
+        "data_to",
+        "run_first",
+        "run_last",
+        "summary",
+        "page"
+      ],
+      "title": "AnalysisInfo",
+      "type": "object"
+    },
     "SourceHealth": {
       "additionalProperties": false,
       "description": "一個資料來源的狀態。",
@@ -1479,6 +1600,19 @@
             "error"
           ],
           "type": "string"
+        },
+        "first_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "該來源最早一筆資料的日期"
         },
         "last_date": {
           "anyOf": [
@@ -1509,6 +1643,7 @@
         "id",
         "name",
         "status",
+        "first_date",
         "last_date",
         "note"
       ],
@@ -1564,6 +1699,13 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "analyses": {
+          "description": "各項分析的方法、時間與資料期間",
+          "items": {
+            "$ref": "#/$defs/AnalysisInfo"
+          },
+          "type": "array"
         }
       },
       "required": [
@@ -1573,7 +1715,8 @@
         "coverage_start",
         "sources",
         "tracked",
-        "build_notes"
+        "build_notes",
+        "analyses"
       ],
       "title": "Meta",
       "type": "object"

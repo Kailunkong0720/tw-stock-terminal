@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 
 import { KLineChart } from '../../charts/KLineChart'
 import { EmptyState, Panel } from '../../design/Panel'
+import { Provenance } from '../../design/Provenance'
 import { Segmented } from '../../design/Segmented'
 import { useBars, useCalendar, useEvents, useMoves, useSecurities, useTimeline } from '../../lib/data'
 import { formatDateTime, formatPct, toneClass } from '../../lib/format'
@@ -67,6 +68,7 @@ export function ExplainIndexPage() {
           ))}
         </ul>
         <p className="px-3 py-2 text-2xs text-text-3">市場事件由資料產生：前一晚費城半導體指數漲跌 3% 以上、加權指數當日漲跌 2.5% 以上。</p>
+        <Provenance ids={['factor', 'attribution']} className="px-3 pb-3" />
       </Panel>
     </div>
   )
@@ -120,6 +122,7 @@ export function ExplainDetailPage() {
     <div className="grid min-h-full gap-2 p-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
       <Panel title={title} bodyClassName="p-4">
         <MoveDetail m={m} tracked={Boolean(moves.data?.tracked)} symbol={symbol} />
+        <Provenance ids={['factor', 'attribution']} className="mt-4 border-t border-line pt-2" />
       </Panel>
       <div className="flex min-h-0 flex-col gap-2">
         <Panel title="前後走勢（還原）" className="h-80">

@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 
 import { EmptyState } from '../../design/Panel'
+import { Provenance } from '../../design/Provenance'
 import type { Forecast, SignalOut, TrackRecord } from '../../lib/contract/types'
 import { formatDate, formatPct, formatProb } from '../../lib/format'
 
@@ -29,6 +30,17 @@ export function TrackLine({ t }: { t: TrackRecord | undefined }) {
       <span className="mx-1">·</span>基準 <span className="num">{formatProb(t.baseline_rate, 0)}</span>
       <span className="mx-1">·</span>樣本 <span className="num">{t.n}</span>
     </span>
+  )
+}
+
+/** 預測是快照：基準日距今超過 30 天時提醒（本站約每季更新，PLAN.md 第 10 節「預測過期」）。 */
+function StaleNote({ base }: { base: string }) {
+  const days = Math.floor((Date.now() - Date.parse(`${base}T13:30:00+08:00`)) / 86_400_000)
+  if (!(days > 30)) return null
+  return (
+    <p className="mx-3 mb-1.5 rounded-control bg-warn/10 px-2 py-1 text-2xs leading-snug text-warn">
+      預測基準日距今已 {days} 天，20 個交易日的預測期間已經結束。本站約每季更新一次，請把這裡當作歷史紀錄參考。
+    </p>
   )
 }
 
@@ -103,6 +115,8 @@ export function ModelPanel({ tracked, forecast, loading, showCone, onToggleCone,
           {forecast.model} · 基準日 <span className="num text-text-2">{formatDate(forecast.base_date)}</span>
         </span>
       </div>
+      <StaleNote base={forecast.base_date} />
+      <Provenance ids={['forecast', 'backtest']} className="border-b border-line/70 px-3 pb-1.5" />
       <div className="min-h-0 flex-1 overflow-auto">
         {forecast.signals.map((s) => (
           <SignalRow key={s.horizon} s={s} t={byH.get(s.horizon)} />

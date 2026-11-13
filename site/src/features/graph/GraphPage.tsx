@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
 
 import { EmptyState, Panel } from '../../design/Panel'
+import { Provenance } from '../../design/Provenance'
 import { Segmented } from '../../design/Segmented'
 import { GraphCanvas } from '../../graph/GraphCanvas'
 import type { GraphEgo, GraphNode } from '../../lib/contract/types'
@@ -288,6 +289,7 @@ export function GraphPage() {
           <p>點選右側清單或圖上的異常波動，解釋路徑上的連線會出現流動的粒子，其餘節點淡出。</p>
           <p>點選指標、海外公司或題材，可看「傳導預覽」：它變動時可能受影響的台股。點選其他台股公司會切換中心。</p>
           <p>關係來源：人工整理（實線）、由股價資料算出的連動（點線）。新聞抽取的關係尚未加入。</p>
+          <Provenance ids={['graph', 'attribution']} className="border-t border-line pt-2" />
         </Panel>
       </div>
     </div>

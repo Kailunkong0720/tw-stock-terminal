@@ -14,6 +14,7 @@ import logging
 from datetime import date, datetime, time, timedelta
 
 import pandas as pd
+from sqlalchemy import delete
 from sqlalchemy.dialects.sqlite import insert
 
 from pipeline.core.config import COVERAGE_START, Settings
@@ -22,7 +23,7 @@ from pipeline.core.http import FetchError, HttpClient
 from pipeline.events.classify import classify
 from pipeline.ingest.common import Progress, done_keys, last_ready_date, mark
 from pipeline.ingest.parse import clean_code, roc_date
-from pipeline.models import Event
+from pipeline.models import Event, IngestLog
 
 log = logging.getLogger(__name__)
 
@@ -97,6 +98,14 @@ def ingest_mops(settings: Settings, symbols: list[str] | None = None) -> None:
     # ETF 不是公司，MOPS 會回「公司代號格式錯誤」
     etfs = set(pd.read_sql_query("SELECT symbol FROM security WHERE kind = 'etf'", engine)["symbol"])
     symbols = [s for s in symbols if s not in etfs]
+    # 早期版本曾查過 ETF 而留下錯誤紀錄；它們不是待重試的失敗，清掉以免網站顯示「抓取失敗」
+    with session_scope(settings) as s:
+        for etf in etfs:
+            s.execute(
+                delete(IngestLog).where(
+                    IngestLog.source == SOURCE, IngestLog.key.like(f"{etf}:%"), IngestLog.status == "error"
+                )
+            )
     end = last_ready_date()
     years = list(range(COVERAGE_START.year, end.year + 1))
     with session_scope(settings) as s:

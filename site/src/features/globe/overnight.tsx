@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { alpha, type ChartTheme } from '../../charts/theme'
 import { Panel } from '../../design/Panel'
+import { Provenance } from '../../design/Provenance'
 import type { GlobeArc, GlobePoint, GlobeRing, GlobeTag, GlobeView } from '../../globe/GlobeCanvas'
 import type { GlobeOvernight } from '../../lib/contract/types'
 import { formatDate, formatPct } from '../../lib/format'
@@ -253,6 +254,7 @@ export function OvernightSide({ data, m, dates }: { data: GlobeOvernight; m: Ove
             漲跌解析
           </Link>
         </div>
+        <Provenance ids={['overnight']} className="border-t border-line pt-2" />
       </Panel>
       <Panel title="最大的隔夜衝擊" className="min-h-0 flex-1" bodyClassName="overflow-auto">
         <ul className="text-xs">

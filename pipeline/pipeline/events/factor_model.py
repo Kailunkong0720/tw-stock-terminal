@@ -141,6 +141,9 @@ def _overnight(sox: pd.Series | None, tw_dates: list[date]) -> np.ndarray:
 
 
 def compute_moves(settings: Settings) -> None:
+    from pipeline.core.provenance import now, save_run
+
+    started = now()
     engine = get_engine(settings)
     rets = _index_returns(engine)
     mkt = rets.get(TAIEX_TR)
@@ -249,3 +252,14 @@ def compute_moves(settings: Settings) -> None:
         total += len(rows)
         anomalies += int(anom.sum())
     log.info("因子拆解：%d 筆，異常波動日 %d 筆（%.1f%%）", total, anomalies, 100 * anomalies / max(total, 1))
+    with engine.connect() as c:
+        lo, hi = c.exec_driver_sql("SELECT MIN(date), MAX(date) FROM price_move").one()
+    save_run(
+        settings,
+        "factor",
+        started,
+        pd.Timestamp(lo).date() if lo else None,
+        pd.Timestamp(hi).date() if hi else None,
+        {"window": WINDOW, "z": Z_THRESHOLD, "min_idio": MIN_IDIO, "vol_ratio": VOL_RATIO, "vol_min_ret": VOL_MIN_RET},
+        f"{total:,} 筆日報酬，異常波動 {anomalies:,} 筆（{100 * anomalies / max(total, 1):.1f}%）",
+    )

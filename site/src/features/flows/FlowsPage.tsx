@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { IndexChart } from '../../charts/IndexChart'
 import { alpha, readTheme } from '../../charts/theme'
 import { EmptyState, Panel } from '../../design/Panel'
+import { Provenance } from '../../design/Provenance'
 import { Segmented } from '../../design/Segmented'
 import { useCalendar, useHeatmap, useIndustryFlows, useMarketFlows, useOverview } from '../../lib/data'
 import { formatYi, toneClass } from '../../lib/format'
@@ -175,6 +176,7 @@ export function FlowsPage() {
         <p className="px-3 pb-3 text-2xs leading-relaxed text-text-3">
           外資採證交所定義（不含外資自營商）。金額為估算：買賣超股數 × 收盤價。這是交易所內的買賣淨額，不是跨境資金的匯入匯出。
         </p>
+        <Provenance ids={['flows']} className="px-3 pb-3" />
       </Panel>
 
       <Panel title="產業輪動：外資每月淨流入" className="min-h-80">

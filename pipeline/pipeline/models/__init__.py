@@ -1,5 +1,6 @@
 """SQLAlchemy 模型。新增模型後要在這裡匯入，讓 Alembic 看得到。"""
 
+from pipeline.models.analysis import AnalysisRun
 from pipeline.models.base import Base
 from pipeline.models.events import Attribution, Event
 from pipeline.models.forecast import ForecastRun, ForecastStep
@@ -17,6 +18,7 @@ from pipeline.models.market import (
 )
 
 __all__ = [
+    "AnalysisRun",
     "Attribution",
     "Base",
     "Event",

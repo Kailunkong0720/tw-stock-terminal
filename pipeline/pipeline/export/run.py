@@ -26,7 +26,18 @@ DISPLAY_SOURCES: list[tuple[str, str, list[str]]] = [
     ("twse_foreign_holding", "外資持股", ["twse_mi_qfiis"]),
     ("twse_corporate_actions", "除權息與分割", ["twse_twt49u", "twse_twtauu", "twse_twtb8u", "twse_twtcau"]),
     ("twse_company", "公司基本資料", ["twse_openapi_company"]),
+    ("mops", "公開資訊觀測站重大訊息（追蹤池）", ["mops_t05st01"]),
+    ("yahoo", "Yahoo Finance 海外指數與匯率（只用於計算）", ["yahoo_chart"]),
 ]
+# 各來源實際存進資料庫的日期範圍（比抓取紀錄的鍵更準確）
+SOURCE_RANGES: dict[str, str] = {
+    "twse_daily": "SELECT MIN(date), MAX(date) FROM daily_bar",
+    "twse_institutional": "SELECT MIN(date), MAX(date) FROM institutional_flow",
+    "twse_foreign_holding": "SELECT MIN(date), MAX(date) FROM foreign_holding",
+    "twse_corporate_actions": "SELECT MIN(ex_date), MAX(ex_date) FROM corporate_action",
+    "mops": "SELECT MIN(trade_date), MAX(trade_date) FROM event WHERE uid LIKE 'mops:%'",
+    "yahoo": "SELECT MIN(date), MAX(date) FROM index_bar WHERE index_id LIKE 'GLOBAL:%'",
+}
 
 BUILD_NOTES = [
     "價格為證交所公布的原始價；還原價依除權息、減資、變更面額、ETF 分割的參考價計算。",
@@ -42,10 +53,12 @@ BUILD_NOTES = [
 ]
 
 
-def build_meta(settings: Settings, as_of: date | None = None) -> Meta:
+def build_meta(settings: Settings, as_of: date | None = None, calendar: list[date] | None = None) -> Meta:
     from pipeline.export.market import source_status
+    from pipeline.export.provenance import build_analyses, date_range
 
     engine = get_engine(settings)
+    generated_at = datetime.now(TPE).replace(microsecond=0)
     with session_scope(settings) as s:
         if as_of is None:
             as_of = s.execute(select(func.max(DailyBar.date))).scalar_one_or_none()
@@ -60,23 +73,26 @@ def build_meta(settings: Settings, as_of: date | None = None) -> Meta:
             continue
         n_err = sum(g[2] for g in got)
         dates = [g[0] for g in got if g[0] and len(g[0]) == 10]
+        first, last = date_range(engine, SOURCE_RANGES[sid], as_of) if sid in SOURCE_RANGES else (None, None)
         sources.append(
             SourceHealth(
                 id=sid,
                 name=name,
                 status="partial" if n_err or len(got) < len(parts) else "ok",
-                last_date=date.fromisoformat(max(dates)) if dates else None,
+                first_date=first,
+                last_date=last or (date.fromisoformat(max(dates)) if dates else None),
                 note=f"{n_err} 筆抓取失敗待重試" if n_err else None,
             )
         )
 
     return Meta(
-        generated_at=datetime.now(TPE).replace(microsecond=0),
+        generated_at=generated_at,
         data_as_of=as_of,
         coverage_start=COVERAGE_START,
         sources=sources,
         tracked=tracked,
         build_notes=BUILD_NOTES if as_of else [],
+        analyses=build_analyses(settings, engine, calendar or [], generated_at) if as_of else [],
     )
 
 
@@ -104,7 +120,7 @@ def run_export(settings: Settings) -> ExportWriter:
         export_globe(get_engine(settings), writer, exporter.calendar)
     # 資料截止日 = 這次輸出的日曆最後一天（回補程序可能同時在寫入更新的日子）
     as_of = exporter.calendar[-1] if exporter.calendar else None
-    writer.write("meta.json", build_meta(settings, as_of))
+    writer.write("meta.json", build_meta(settings, as_of, exporter.calendar))
     total = writer.check_budget()
     log.info("輸出 %d 個檔案到 %s，總大小 %.1f MB", writer.file_count(), settings.export_dir, total / 1e6)
     return writer

@@ -28,8 +28,25 @@ class SourceHealth(_Model):
     id: str = Field(description="來源代號，例如 twse_daily")
     name: str = Field(description="顯示名稱")
     status: Literal["ok", "partial", "pending", "error"]
+    first_date: date | None = Field(default=None, description="該來源最早一筆資料的日期")
     last_date: date | None = Field(default=None, description="該來源最新一筆資料的日期")
     note: str | None = None
+
+
+class AnalysisInfo(_Model):
+    """一項分析的說明：用什麼方法、什麼時候算的、用哪段資料（網站「分析說明」）。"""
+
+    id: str
+    name: str
+    method: str = Field(description="方法說明")
+    params: list[str] = Field(default_factory=list, description="參數與門檻（條列）")
+    inputs: list[str] = Field(default_factory=list, description="使用的資料與來源（條列）")
+    data_from: date | None = Field(default=None, description="使用資料的第一天")
+    data_to: date | None = Field(default=None, description="使用資料的最後一天")
+    run_first: datetime | None = Field(default=None, description="這份結果最早的計算時間（分多次算完時）")
+    run_last: datetime | None = Field(default=None, description="最近一次計算完成的時間")
+    summary: str | None = Field(default=None, description="結果摘要，例如樣本數")
+    page: str | None = Field(default=None, description="呈現這項分析的頁面（站內路徑）")
 
 
 class Meta(_Model):
@@ -42,6 +59,7 @@ class Meta(_Model):
     sources: list[SourceHealth] = Field(default_factory=list)
     tracked: list[str] = Field(default_factory=list, description="追蹤池代號")
     build_notes: list[str] = Field(default_factory=list, description="建置時做的取捨，顯示在「關於」頁")
+    analyses: list[AnalysisInfo] = Field(default_factory=list, description="各項分析的方法、時間與資料期間")
 
 
 class Calendar(_Model):

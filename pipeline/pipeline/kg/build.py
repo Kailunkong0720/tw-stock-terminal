@@ -49,6 +49,9 @@ def _overnight_returns(series: pd.Series, tw_dates: list) -> np.ndarray:  # noqa
 
 
 def build_graph(settings: Settings) -> None:
+    from pipeline.core.provenance import now
+
+    started = now()
     engine = get_engine(settings)
     seed = load_seed()
     src_tag = seed.get("source", "seed")
@@ -149,3 +152,15 @@ def build_graph(settings: Settings) -> None:
         upsert(s, KgNode, list(nodes.values()))
         s.add_all([KgEdge(**e) for e in edges])
     log.info("知識圖譜：%d 個節點、%d 條靜態關係（其中實測敏感度 %d 條）", len(nodes), len(edges), n_sens)
+    from pipeline.core.provenance import save_run
+
+    window = moves.groupby("symbol")["date"].apply(lambda d: sorted(d)[-SENSITIVITY_DAYS:][0]) if len(moves) else None
+    save_run(
+        settings,
+        "graph",
+        started,
+        min(window) if window is not None and len(window) else None,
+        max(moves["date"]) if len(moves) else None,
+        {"sensitivity_min": SENSITIVITY_MIN, "sensitivity_days": SENSITIVITY_DAYS, "seed_source": src_tag},
+        f"{len(nodes)} 個節點、{len(edges)} 條關係（人工整理 {len(seed['edges'])} 條、實測連動 {n_sens} 條）",
+    )

@@ -500,6 +500,10 @@ export interface Meta {
    * 建置時做的取捨，顯示在「關於」頁
    */
   build_notes: string[];
+  /**
+   * 各項分析的方法、時間與資料期間
+   */
+  analyses: AnalysisInfo[];
 }
 /**
  * 一個資料來源的狀態。
@@ -515,10 +519,57 @@ export interface SourceHealth {
   name: string;
   status: "ok" | "partial" | "pending" | "error";
   /**
+   * 該來源最早一筆資料的日期
+   */
+  first_date: string | null;
+  /**
    * 該來源最新一筆資料的日期
    */
   last_date: string | null;
   note: string | null;
+}
+/**
+ * 一項分析的說明：用什麼方法、什麼時候算的、用哪段資料（網站「分析說明」）。
+ */
+export interface AnalysisInfo {
+  id: string;
+  name: string;
+  /**
+   * 方法說明
+   */
+  method: string;
+  /**
+   * 參數與門檻（條列）
+   */
+  params: string[];
+  /**
+   * 使用的資料與來源（條列）
+   */
+  inputs: string[];
+  /**
+   * 使用資料的第一天
+   */
+  data_from: string | null;
+  /**
+   * 使用資料的最後一天
+   */
+  data_to: string | null;
+  /**
+   * 這份結果最早的計算時間（分多次算完時）
+   */
+  run_first: string | null;
+  /**
+   * 最近一次計算完成的時間
+   */
+  run_last: string | null;
+  /**
+   * 結果摘要，例如樣本數
+   */
+  summary: string | null;
+  /**
+   * 呈現這項分析的頁面（站內路徑）
+   */
+  page: string | null;
 }
 /**
  * data/calendar.json：資料期間的所有交易日（遞增）。

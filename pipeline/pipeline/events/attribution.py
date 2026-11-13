@@ -208,6 +208,9 @@ def reclassify(settings: Settings) -> int:
 
 
 def attribute(settings: Settings) -> None:
+    from pipeline.core.provenance import now, save_run
+
+    started = now()
     engine = get_engine(settings)
     n_re = reclassify(settings)
     if n_re:
@@ -290,6 +293,16 @@ def attribute(settings: Settings) -> None:
         len(anomalies),
         found,
         100 * found / max(len(anomalies), 1),
+    )
+    save_run(
+        settings,
+        "attribution",
+        started,
+        min(anomalies["date"]) if len(anomalies) else None,
+        max(anomalies["date"]) if len(anomalies) else None,
+        {"weights": WEIGHTS, "min_score": MIN_SCORE, "proximity": PROXIMITY, "priors": priors},
+        f"追蹤池異常波動日 {len(anomalies):,} 個，其中 {found:,} 個找到可能相關的事件"
+        f"（{100 * found / max(len(anomalies), 1):.0f}%）；市場事件 {n_market} 個",
     )
 
 
