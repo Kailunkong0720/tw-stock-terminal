@@ -48,6 +48,7 @@ export function InfoBar({ sec, raw, adj }: { sec: SecurityInfo | undefined; raw:
           </div>
           <div className="text-2xs text-text-3">
             {sec?.industry ?? '—'}
+            {sec?.market === 'TPEx' && <span className="ml-1.5 rounded-sm bg-raised px-1 text-text-2">上櫃</span>}
             {sec && !sec.active && <span className="ml-2 text-warn">已停止交易（最後交易日 {sec.last}）</span>}
           </div>
         </div>

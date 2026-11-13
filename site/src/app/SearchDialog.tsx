@@ -31,6 +31,7 @@ function Row({ s, onPick }: { s: SecurityInfo; onPick: (sym: string) => void }) 
       <span className="truncate text-text-1">
         {s.name}
         <span className="ml-2 text-2xs text-text-3">{s.industry}</span>
+        {s.market === 'TPEx' && <span className="ml-1.5 rounded-sm bg-raised px-1 text-2xs text-text-2">上櫃</span>}
         {!s.active && <span className="ml-2 text-2xs text-warn">已停止交易</span>}
       </span>
       <span className="num text-right text-text-2">{formatPrice(s.close, { etf: s.kind === 'etf' })}</span>

@@ -581,7 +581,7 @@ export interface Calendar {
   dates: string[];
 }
 /**
- * data/securities.json：所有上市股票與 ETF（搜尋用，啟動時載入）。
+ * data/securities.json：所有上市股票、ETF 與上櫃股票（搜尋用，啟動時載入）。
  */
 export interface Securities {
   items: SecurityInfo[];
@@ -590,6 +590,10 @@ export interface SecurityInfo {
   symbol: string;
   name: string;
   kind: "stock" | "etf";
+  /**
+   * TWSE：上市；TPEx：上櫃
+   */
+  market: "TWSE" | "TPEx";
   /**
    * 產業名稱；ETF 為 ETF
    */
@@ -729,6 +733,10 @@ export interface IndustryFlowSeries {
  */
 export interface Overview {
   taiex: IndexSeries;
+  /**
+   * 櫃買指數
+   */
+  otc: IndexSeries | null;
   sectors: SectorPerf[];
   breadth: Breadth;
 }

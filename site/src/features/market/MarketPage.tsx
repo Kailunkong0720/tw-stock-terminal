@@ -78,18 +78,22 @@ export function MarketPage() {
     return () => window.clearTimeout(id)
   }, [playing, week, nWeeks, h])
 
+  const [indexId, setIndexId] = useState<'taiex' | 'otc'>('taiex')
+  const hasOtc = Boolean(ov.data?.otc)
   const taiex = useMemo(() => {
-    const t = ov.data?.taiex
+    const t = indexId === 'otc' && ov.data?.otc ? ov.data.otc : ov.data?.taiex
     const dates = cal.data?.dates
     if (!t || !dates) return []
     return t.close.flatMap((v, i) => (v == null ? [] : [{ time: dates[t.start + i]!, value: v }]))
-  }, [ov.data, cal.data])
+  }, [ov.data, cal.data, indexId])
   const taiexMarks = useMemo(
     () =>
-      (tl.data?.market ?? [])
-        .filter((e) => e.title.startsWith('加權指數'))
-        .map((e) => ({ time: e.trade_date, up: e.direction > 0 })),
-    [tl.data],
+      indexId === 'otc'
+        ? []
+        : (tl.data?.market ?? [])
+            .filter((e) => e.title.startsWith('加權指數'))
+            .map((e) => ({ time: e.trade_date, up: e.direction > 0 })),
+    [tl.data, indexId],
   )
   const recent = (tl.data?.moves ?? []).slice(-14).reverse()
 
@@ -208,7 +212,24 @@ export function MarketPage() {
         )}
       </Panel>
 
-      <Panel title="加權指數（▲▼ 單日漲跌 2.5% 以上）" className="min-h-60">
+      <Panel
+        title={indexId === 'otc' ? '櫃買指數' : '加權指數（▲▼ 單日漲跌 2.5% 以上）'}
+        actions={
+          hasOtc ? (
+            <Segmented
+              size="xs"
+              label="指數"
+              value={indexId}
+              onChange={(v) => setIndexId(v as 'taiex' | 'otc')}
+              options={[
+                { value: 'taiex', label: '加權' },
+                { value: 'otc', label: '櫃買' },
+              ]}
+            />
+          ) : undefined
+        }
+        className="min-h-60"
+      >
         {taiex.length > 0 ? <IndexChart line={taiex} markers={taiexMarks} /> : <EmptyState title="讀取中…" />}
       </Panel>
 

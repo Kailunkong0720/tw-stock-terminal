@@ -26,6 +26,9 @@ DISPLAY_SOURCES: list[tuple[str, str, list[str]]] = [
     ("twse_foreign_holding", "外資持股", ["twse_mi_qfiis"]),
     ("twse_corporate_actions", "除權息與分割", ["twse_twt49u", "twse_twtauu", "twse_twtb8u", "twse_twtcau"]),
     ("twse_company", "公司基本資料", ["twse_openapi_company"]),
+    ("tpex_daily", "櫃買中心每日收盤行情與櫃買指數（上櫃）", ["tpex_otc", "tpex_roe"]),
+    ("tpex_institutional", "櫃買中心三大法人與外資持股（上櫃）", ["tpex_daily_trade", "tpex_qfii"]),
+    ("tpex_actions", "櫃買中心除權息、減資、變更面額（上櫃）", ["tpex_exdailyq", "tpex_revivt", "tpex_pvchg"]),
     ("mops", "公開資訊觀測站重大訊息（追蹤池）", ["mops_t05st01"]),
     ("yahoo", "Yahoo Finance 海外指數與匯率（只用於計算）", ["yahoo_chart"]),
 ]
@@ -35,6 +38,11 @@ SOURCE_RANGES: dict[str, str] = {
     "twse_institutional": "SELECT MIN(date), MAX(date) FROM institutional_flow",
     "twse_foreign_holding": "SELECT MIN(date), MAX(date) FROM foreign_holding",
     "twse_corporate_actions": "SELECT MIN(ex_date), MAX(ex_date) FROM corporate_action",
+    "tpex_daily": "SELECT MIN(b.date), MAX(b.date) FROM daily_bar b JOIN security s ON s.symbol = b.symbol "
+    "WHERE s.market = 'TPEx'",
+    "tpex_institutional": "SELECT MIN(f.date), MAX(f.date) FROM institutional_flow f JOIN security s "
+    "ON s.symbol = f.symbol WHERE s.market = 'TPEx'",
+    "tpex_actions": "SELECT MIN(ex_date), MAX(ex_date) FROM corporate_action WHERE source LIKE 'TPEx%'",
     "mops": "SELECT MIN(trade_date), MAX(trade_date) FROM event WHERE uid LIKE 'mops:%'",
     "yahoo": "SELECT MIN(date), MAX(date) FROM index_bar WHERE index_id LIKE 'GLOBAL:%'",
 }

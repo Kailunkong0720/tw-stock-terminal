@@ -76,6 +76,7 @@ class SecurityInfo(_Model):
     symbol: str
     name: str
     kind: Literal["stock", "etf"]
+    market: Literal["TWSE", "TPEx"] = Field(default="TWSE", description="TWSE：上市；TPEx：上櫃")
     industry: str | None = Field(description="產業名稱；ETF 為 ETF")
     tracked: bool = Field(description="是否在追蹤池（有模型預測與事件分析）")
     first: date = Field(description="資料期間內第一個交易日")
@@ -86,7 +87,7 @@ class SecurityInfo(_Model):
 
 
 class Securities(_Model):
-    """data/securities.json：所有上市股票與 ETF（搜尋用，啟動時載入）。"""
+    """data/securities.json：所有上市股票、ETF 與上櫃股票（搜尋用，啟動時載入）。"""
 
     items: list[SecurityInfo]
 
@@ -207,6 +208,7 @@ class Overview(_Model):
     """data/market/overview.json：大盤、類股表現、漲跌家數。"""
 
     taiex: IndexSeries
+    otc: IndexSeries | None = Field(default=None, description="櫃買指數")
     sectors: list[SectorPerf]
     breadth: Breadth
 

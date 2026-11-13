@@ -86,7 +86,7 @@ class MarketExporter:
     def export_securities(self) -> pd.DataFrame:
         # 起訖日期直接由日線計算（security.first_bar 只在回補結束時更新，回補途中可能是空的）
         secs = self.q(
-            "SELECT s.symbol, s.name, s.kind, s.industry, s.tracked, r.first_bar, r.last_bar FROM security s "
+            "SELECT s.symbol, s.name, s.kind, s.industry, s.tracked, s.market, r.first_bar, r.last_bar FROM security s "
             "JOIN (SELECT symbol, MIN(date) AS first_bar, MAX(date) AS last_bar FROM daily_bar "
             "WHERE date <= :end GROUP BY symbol) r "
             "ON r.symbol = s.symbol WHERE s.kind IN ('stock', 'etf') ORDER BY s.symbol",
@@ -119,6 +119,7 @@ class MarketExporter:
                     symbol=r.symbol,
                     name=r.name,
                     kind=r.kind,
+                    market="TPEx" if r.market == "TPEx" else "TWSE",
                     industry=None if pd.isna(r.industry) else r.industry,
                     tracked=bool(r.tracked),
                     first=pd.Timestamp(r.first_bar).date(),
@@ -267,6 +268,13 @@ class MarketExporter:
         tdates = list(t["date"])
         tstart, tclose = self._align(tdates, [_num(v) for v in t["close"]], None)
         taiex = IndexSeries(id=TAIEX, name="發行量加權股價指數", start=tstart, close=tclose)
+        from pipeline.ingest.tpex import OTC_INDEX
+
+        o = idx[idx.index_id == OTC_INDEX]
+        otc = None
+        if not o.empty:
+            ostart, oclose = self._align(list(o["date"]), [_num(v) for v in o["close"]], None)
+            otc = IndexSeries(id=OTC_INDEX, name="櫃買指數", start=ostart, close=oclose)
 
         sectors = []
         for name, cands in INDUSTRIES.values():
@@ -314,7 +322,7 @@ class MarketExporter:
 
         self.w.write(
             "market/overview.json",
-            Overview(taiex=taiex, sectors=uniq, breadth=Breadth(start=bstart, up=up, down=down, flat=flat)),
+            Overview(taiex=taiex, otc=otc, sectors=uniq, breadth=Breadth(start=bstart, up=up, down=down, flat=flat)),
         )
 
     # ── 市值熱力圖 ──────────────────────────────────────────────────────

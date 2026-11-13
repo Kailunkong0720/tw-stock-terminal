@@ -1755,6 +1755,15 @@
           ],
           "type": "string"
         },
+        "market": {
+          "default": "TWSE",
+          "description": "TWSE：上市；TPEx：上櫃",
+          "enum": [
+            "TWSE",
+            "TPEx"
+          ],
+          "type": "string"
+        },
         "industry": {
           "anyOf": [
             {
@@ -1811,6 +1820,7 @@
         "symbol",
         "name",
         "kind",
+        "market",
         "industry",
         "tracked",
         "first",
@@ -1824,7 +1834,7 @@
     },
     "Securities": {
       "additionalProperties": false,
-      "description": "data/securities.json：所有上市股票與 ETF（搜尋用，啟動時載入）。",
+      "description": "data/securities.json：所有上市股票、ETF 與上櫃股票（搜尋用，啟動時載入）。",
       "properties": {
         "items": {
           "items": {
@@ -2315,6 +2325,18 @@
         "taiex": {
           "$ref": "#/$defs/IndexSeries"
         },
+        "otc": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IndexSeries"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "櫃買指數"
+        },
         "sectors": {
           "items": {
             "$ref": "#/$defs/SectorPerf"
@@ -2327,6 +2349,7 @@
       },
       "required": [
         "taiex",
+        "otc",
         "sectors",
         "breadth"
       ],

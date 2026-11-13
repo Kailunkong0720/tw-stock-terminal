@@ -105,6 +105,8 @@ def build_analyses(
             inputs=[
                 f"證交所每日收盤行情（MI_INDEX）：{_fmt(bars[0])} 至 {_fmt(bars[1])}",
                 f"證交所除權息、減資、變更面額、ETF 分割報表（TWT49U、TWTAUU、TWTB8U、TWTCAU）：除權日 {_fmt(acts[0])} 至 {_fmt(acts[1])}",
+                "櫃買中心（上櫃）每日收盤行情與除權除息、減資、變更面額參考價（afterTrading/otc、bulletin/exDailyQ、"
+                "bulletin/revivt、bulletin/pvChgRslt），規則與上市相同",
             ],
             data_from=bars[0],
             data_to=bars[1],
@@ -124,10 +126,15 @@ def build_analyses(
                 "個股金額以買賣超股數 × 當日收盤價估算；產業流向是同產業個股估算金額的加總；"
                 "外資持股比率取每週最後一個交易日。這是交易所內的買賣淨額，不是跨境資金的匯入匯出。"
             ),
-            params=["金額為估算值：法人實際成交價不一定是收盤價", "全市場數字直接採用證交所 BFI82U 的實際金額"],
+            params=[
+                "金額為估算值：法人實際成交價不一定是收盤價",
+                "全市場數字直接採用證交所 BFI82U 的實際金額（只有上市；資金流向頁的全市場圖表不含上櫃）",
+                "上櫃個股的外資同樣採不含外資自營商",
+            ],
             inputs=[
                 f"證交所三大法人買賣超（T86 個股、BFI82U 全市場）：{_fmt(flows[0])} 至 {_fmt(flows[1])}",
                 f"證交所外資持股（MI_QFIIS）：{_fmt(holds[0])} 至 {_fmt(holds[1])}",
+                "櫃買中心（上櫃）三大法人買賣明細（insti/dailyTrade）與僑外資持股（insti/qfii）",
             ],
             data_from=flows[0],
             data_to=flows[1],
