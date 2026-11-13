@@ -12,6 +12,7 @@ from __future__ import annotations
 import bisect
 import hashlib
 import logging
+import time as time_mod
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
@@ -96,6 +97,25 @@ def english_names(http: HttpClient) -> dict[str, str]:
     return out
 
 
+def gdelt_available() -> bool:
+    """先用一個請求確認 GDELT 沒有在限流這台電腦；被限流時直接結束，不做長時間退避。"""
+    import httpx
+
+    try:
+        r = httpx.get(
+            URL,
+            params={"query": "TSMC", "mode": "artlist", "format": "json", "maxrecords": "1", "timespan": "1d"},
+            timeout=30,
+        )
+    except httpx.HTTPError as e:
+        log.warning("GDELT 連線失敗：%s", e)
+        return False
+    if r.status_code == 429:
+        log.warning("GDELT 仍在限流這台電腦（HTTP 429），這次不抓；稍後再執行 ingest news 會從頭接續")
+        return False
+    return r.status_code == 200
+
+
 def ingest_news(settings: Settings, today: date | None = None) -> None:
     from pipeline.core.provenance import now, save_run
 
@@ -114,8 +134,9 @@ def ingest_news(settings: Settings, today: date | None = None) -> None:
         done = done_keys(s, SOURCE)
     jobs = [r for r in days.itertuples() if f"{r.symbol}:{r.date}" not in done]
     log.info("媒體新聞（GDELT）：最近三個月的大波動日 %d 個，待查 %d 個", len(days), len(jobs))
-    if not jobs:
+    if not jobs or not gdelt_available():
         return
+    time_mod.sleep(6)  # 檢查用的請求也算一次，遵守 5 秒間隔
 
     n_rows = 0
     with HttpClient(
