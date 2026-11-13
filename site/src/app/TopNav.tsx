@@ -1,3 +1,4 @@
+import { IconSearch } from '@tabler/icons-react'
 import { Link } from '@tanstack/react-router'
 
 import { Segmented } from '../design/Segmented'
@@ -30,7 +31,7 @@ export function TopNav() {
     <header className="flex h-11 shrink-0 items-center gap-6 border-b border-line bg-panel px-4">
       <Link to="/" className="flex shrink-0 items-center gap-2 text-text-1">
         <Mark />
-        <span className="text-sm font-semibold tracking-wide">台股終端</span>
+        <span className="hidden text-sm font-semibold tracking-wide sm:inline">台股終端</span>
       </Link>
 
       <nav className="-mb-px flex h-full min-w-0 items-stretch gap-5 overflow-x-auto">
@@ -51,10 +52,12 @@ export function TopNav() {
       <button
         type="button"
         onClick={() => useView.getState().setSearchOpen(true)}
-        className="ml-auto flex h-7 shrink-0 items-center gap-6 rounded-control border border-line bg-raised px-2.5 text-xs text-text-3 transition-colors hover:border-line-strong hover:text-text-2"
+        aria-label="搜尋代號或名稱"
+        className="ml-auto flex h-7 shrink-0 items-center gap-6 rounded-control border border-line bg-raised px-2 text-xs text-text-3 transition-colors hover:border-line-strong hover:text-text-2 sm:px-2.5"
       >
-        <span>搜尋代號或名稱</span>
-        <kbd className="num text-2xs">Ctrl K</kbd>
+        <IconSearch size={14} stroke={1.5} className="sm:hidden" />
+        <span className="hidden sm:inline">搜尋代號或名稱</span>
+        <kbd className="num hidden text-2xs sm:inline">Ctrl K</kbd>
       </button>
 
       <div className="hidden shrink-0 items-center gap-2 lg:flex">
