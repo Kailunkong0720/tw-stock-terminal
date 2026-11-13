@@ -2,6 +2,8 @@
 
 台股終端（tw-stock-terminal）。完整計劃與階段勾選狀態在 [PLAN.md](PLAN.md)；先讀 PLAN.md 第 0 節的工作守則。
 
+**2026-11-13 晚上起換到有顯示卡的電腦：先讀 [docs/HANDOFF.md](docs/HANDOFF.md)。**
+
 ## 接續協議（每個工作階段開始時必讀）
 
 這個專案可能由多個工作階段接力完成（使用量重置後由排程任務 `tw-stock-terminal-resume` 自動接續）。為了不讓兩個工作階段同時改檔案：
