@@ -264,6 +264,7 @@ def main(argv: list[str] | None = None) -> int:
     p_bt = sub.add_parser("backtest", help="Kronos 滾動回測（可續跑，耗時數小時）")
     p_bt.add_argument("symbols", nargs="*", help="只跑指定代號（預設：追蹤池）")
     sub.add_parser("moves", help="因子拆解與異常波動日偵測")
+    sub.add_parser("attribution", help="只重算事件歸因與知識圖譜（例如抓完新聞之後）")
     sub.add_parser("status", help="顯示狀態")
     sub.add_parser("check", help="資料品質檢查（還原後漲跌幅不變量）")
     sub.add_parser("migrate", help="升級資料庫結構")
@@ -279,7 +280,7 @@ def main(argv: list[str] | None = None) -> int:
 
     from pipeline.core.power import keep_awake
 
-    long_running = args.cmd in ("build", "refresh", "ingest", "forecast", "backtest", "moves", "export")
+    long_running = args.cmd in ("build", "refresh", "ingest", "forecast", "backtest", "moves", "attribution", "export")
     with keep_awake() if long_running else nullcontext():
         return _dispatch(args, settings)
 
@@ -312,6 +313,13 @@ def _dispatch(args: argparse.Namespace, settings: Settings) -> int:
             _step_migrate(settings)
             with step_lock(settings.run_dir, "moves"):
                 _step_moves(settings)
+        elif args.cmd == "attribution":
+            from pipeline.kg.build import build_graph
+
+            _step_migrate(settings)
+            with step_lock(settings.run_dir, "moves"):
+                _step_attribution(settings)
+                build_graph(settings)
         elif args.cmd == "status":
             cmd_status(settings)
         elif args.cmd == "check":
