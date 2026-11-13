@@ -14,7 +14,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-CONTRACT_VERSION = 1
+CONTRACT_VERSION = 2  # 2：heatmap.json 的各週歷史移到 heatmap-history.json
 
 
 class _Model(BaseModel):
@@ -192,14 +192,20 @@ class HeatItem(_Model):
 class Heatmap(_Model):
     """data/market/heatmap.json：市值前幾大上市股票的熱力圖。
 
-    版面以最新市值固定，播放時只有顏色變化。ret 與 foreign 的第一維是週、第二維與 items 對齊。
+    版面以最新市值固定，播放時只有顏色變化。各週的歷史在 heatmap-history.json（用到才載入）。
     """
 
     as_of: date
     items: list[HeatItem]
     ret_1d: list[float | None] = Field(description="資料截止日的漲跌幅（%）")
     foreign_1d: list[float | None] = Field(description="資料截止日的外資估算買賣超（億元）")
-    weeks: list[date] = Field(description="每週最後一個交易日")
+    weeks: list[date] = Field(description="每週最後一個交易日（時間軸的長度）")
+
+
+class HeatmapHistory(_Model):
+    """data/market/heatmap-history.json：熱力圖各週的歷史。第一維是週、第二維與 heatmap.json 的 items 對齊。"""
+
+    weeks: list[date]
     ret: list[list[float | None]] = Field(description="各週還原報酬（%）")
     foreign: list[list[float | None]] = Field(description="各週外資估算買賣超（億元）")
 
@@ -506,4 +512,5 @@ EXPORTED_MODELS: list[type[BaseModel]] = [
     IndustryFlows,
     Overview,
     Heatmap,
+    HeatmapHistory,
 ]

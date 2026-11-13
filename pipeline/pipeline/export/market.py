@@ -17,6 +17,7 @@ from pipeline.export.contract import (
     Flows,
     HeatItem,
     Heatmap,
+    HeatmapHistory,
     IndexSeries,
     IndustryFlows,
     IndustryFlowSeries,
@@ -408,12 +409,12 @@ class MarketExporter:
             HeatItem(symbol=r.symbol, name=r.name, industry=r.industry, cap=round(float(r.cap), 1))
             for r in top.itertuples()
         ]
+        # 首頁只需要當天的顏色；各週的歷史（播放、累積報酬）另存一檔，用到才載入
         self.w.write(
             "market/heatmap.json",
-            Heatmap(
-                as_of=last, items=items, ret_1d=ret_1d, foreign_1d=foreign_1d, weeks=weeks, ret=ret, foreign=foreign
-            ),
+            Heatmap(as_of=last, items=items, ret_1d=ret_1d, foreign_1d=foreign_1d, weeks=weeks),
         )
+        self.w.write("market/heatmap-history.json", HeatmapHistory(weeks=weeks, ret=ret, foreign=foreign))
 
     def run(self) -> None:
         if not self.export_calendar():

@@ -13,6 +13,7 @@ import type {
   GraphEgo,
   GraphPropagate,
   Heatmap,
+  HeatmapHistory,
   IndustryFlows,
   MarketFlows,
   Meta,
@@ -90,6 +91,9 @@ export const useCalendar = () => useDataFile<Calendar>('calendar.json', ['calend
 export const useSecurities = () => useDataFile<Securities>('securities.json', ['securities'])
 export const useOverview = () => useDataFile<Overview>('market/overview.json', ['overview'])
 export const useHeatmap = () => useDataFile<Heatmap>('market/heatmap.json', ['heatmap'])
+/** 熱力圖各週的歷史（約 400 KB）：播放、拖動時間軸或累積報酬時才載入。 */
+export const useHeatmapHistory = (enabled: boolean) =>
+  useDataFile<HeatmapHistory>(enabled ? 'market/heatmap-history.json' : null, ['heatmap-history'])
 export const useIndustryFlows = () => useDataFile<IndustryFlows>('flows/industry.json', ['industry-flows'])
 export const useMarketFlows = () => useDataFile<MarketFlows>('flows/market.json', ['market-flows'])
 export const useBars = (symbol: string) => useDataFile<Bars>(`bars/${symbol}.json`, ['bars', symbol])

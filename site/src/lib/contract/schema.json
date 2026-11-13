@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Contract",
   "description": "tw-stock-terminal 靜態資料契約（由 pipeline 自動產生，請勿手改）",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "properties": {
     "GlobeOvernight": {
@@ -64,6 +64,9 @@
     },
     "Heatmap": {
       "$ref": "#/$defs/Heatmap"
+    },
+    "HeatmapHistory": {
+      "$ref": "#/$defs/HeatmapHistory"
     }
   },
   "additionalProperties": false,
@@ -1655,7 +1658,7 @@
       "description": "data/meta.json：網站啟動時第一個讀的檔案。",
       "properties": {
         "contract_version": {
-          "default": 1,
+          "default": 2,
           "type": "integer"
         },
         "generated_at": {
@@ -2384,7 +2387,7 @@
     },
     "Heatmap": {
       "additionalProperties": false,
-      "description": "data/market/heatmap.json：市值前幾大上市股票的熱力圖。\n\n版面以最新市值固定，播放時只有顏色變化。ret 與 foreign 的第一維是週、第二維與 items 對齊。",
+      "description": "data/market/heatmap.json：市值前幾大上市股票的熱力圖。\n\n版面以最新市值固定，播放時只有顏色變化。各週的歷史在 heatmap-history.json（用到才載入）。",
       "properties": {
         "as_of": {
           "format": "date",
@@ -2425,7 +2428,29 @@
           "type": "array"
         },
         "weeks": {
-          "description": "每週最後一個交易日",
+          "description": "每週最後一個交易日（時間軸的長度）",
+          "items": {
+            "format": "date",
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "as_of",
+        "items",
+        "ret_1d",
+        "foreign_1d",
+        "weeks"
+      ],
+      "title": "Heatmap",
+      "type": "object"
+    },
+    "HeatmapHistory": {
+      "additionalProperties": false,
+      "description": "data/market/heatmap-history.json：熱力圖各週的歷史。第一維是週、第二維與 heatmap.json 的 items 對齊。",
+      "properties": {
+        "weeks": {
           "items": {
             "format": "date",
             "type": "string"
@@ -2468,15 +2493,11 @@
         }
       },
       "required": [
-        "as_of",
-        "items",
-        "ret_1d",
-        "foreign_1d",
         "weeks",
         "ret",
         "foreign"
       ],
-      "title": "Heatmap",
+      "title": "HeatmapHistory",
       "type": "object"
     }
   }

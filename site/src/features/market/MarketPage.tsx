@@ -6,7 +6,7 @@ import { IndexChart } from '../../charts/IndexChart'
 import { Treemap } from '../../charts/Treemap'
 import { EmptyState, Panel } from '../../design/Panel'
 import { Segmented } from '../../design/Segmented'
-import { useCalendar, useHeatmap, useOverview, useTimeline } from '../../lib/data'
+import { useCalendar, useHeatmap, useHeatmapHistory, useOverview, useTimeline } from '../../lib/data'
 import { formatPct, formatYi, toneClass } from '../../lib/format'
 
 type Mode = 'ret' | 'cum' | 'foreign'
@@ -30,17 +30,20 @@ export function MarketPage() {
 
   const h = heat.data
   const nWeeks = h?.weeks.length ?? 0
+  // 各週歷史只有在播放、拖動時間軸或看累積報酬時才下載
+  const needHistory = mode === 'cum' || week != null || playing
+  const hist = useHeatmapHistory(needHistory).data
 
   // 累積報酬：從第一週累乘到所選的週
   const cum = useMemo(() => {
-    if (!h) return []
+    if (!h || !hist) return []
     const out: (number | null)[][] = []
     const acc = h.items.map(() => 1)
     const seen = h.items.map(() => false)
-    for (let w = 0; w < h.weeks.length; w++) {
+    for (let w = 0; w < hist.weeks.length; w++) {
       out.push(
         h.items.map((_, j) => {
-          const r = h.ret[w]![j]
+          const r = hist.ret[w]![j]
           if (r != null) {
             acc[j] = acc[j]! * (1 + r / 100)
             seen[j] = true
@@ -50,33 +53,41 @@ export function MarketPage() {
       )
     }
     return out
-  }, [h])
+  }, [h, hist])
 
   const { values, scale, label, fmt } = useMemo(() => {
     if (!h) return { values: [] as (number | null)[], scale: 1, label: '', fmt: (v: number | null) => String(v) }
     const pct = (v: number | null) => formatPct(v, 1, false)
     const yi = (v: number | null) => (v == null ? '—' : formatYi(v))
+    // 歷史還在下載時先顯示當天
+    const wk = hist ? week : null
+    const loading = needHistory && !hist ? '（讀取歷史資料中…）' : ''
     if (mode === 'foreign') {
-      const v = week == null ? h.foreign_1d : h.foreign[week]!
-      return { values: v, scale: Math.max(1, p90(v)), label: week == null ? '當日外資買賣超' : '當週外資買賣超', fmt: yi }
+      const v = wk == null ? h.foreign_1d : hist!.foreign[wk]!
+      return {
+        values: v,
+        scale: Math.max(1, p90(v)),
+        label: (wk == null ? '當日外資買賣超' : '當週外資買賣超') + loading,
+        fmt: yi,
+      }
     }
-    if (mode === 'cum') {
+    if (mode === 'cum' && hist) {
       const w = week ?? nWeeks - 1
       return { values: cum[w] ?? [], scale: 100, label: `${h.weeks[0]} 起累積報酬`, fmt: pct }
     }
-    const v = week == null ? h.ret_1d : h.ret[week]!
-    return { values: v, scale: week == null ? 5 : 8, label: week == null ? '當日漲跌' : '當週漲跌', fmt: pct }
-  }, [h, mode, week, cum, nWeeks])
+    const v = wk == null ? h.ret_1d : hist!.ret[wk]!
+    return { values: v, scale: wk == null ? 5 : 8, label: (wk == null ? '當日漲跌' : '當週漲跌') + loading, fmt: pct }
+  }, [h, hist, needHistory, mode, week, cum, nWeeks])
 
   useEffect(() => {
-    if (!playing || !h) return
+    if (!playing || !h || !hist) return
     const id = window.setTimeout(() => {
       const w = week ?? -1
       if (w < nWeeks - 1) setWeek(w + 1)
       else setPlaying(false)
     }, 260)
     return () => window.clearTimeout(id)
-  }, [playing, week, nWeeks, h])
+  }, [playing, week, nWeeks, h, hist])
 
   const [indexId, setIndexId] = useState<'taiex' | 'otc'>('taiex')
   const hasOtc = Boolean(ov.data?.otc)

@@ -24,6 +24,7 @@ export interface Contract {
   IndustryFlows?: IndustryFlows;
   Overview?: Overview;
   Heatmap?: Heatmap;
+  HeatmapHistory?: HeatmapHistory;
 }
 /**
  * data/globe/overnight.json：美股前一晚的變動與台股當天的表現（隔夜傳導）。
@@ -776,7 +777,7 @@ export interface Breadth {
 /**
  * data/market/heatmap.json：市值前幾大上市股票的熱力圖。
  *
- * 版面以最新市值固定，播放時只有顏色變化。ret 與 foreign 的第一維是週、第二維與 items 對齊。
+ * 版面以最新市值固定，播放時只有顏色變化。各週的歷史在 heatmap-history.json（用到才載入）。
  */
 export interface Heatmap {
   as_of: string;
@@ -790,17 +791,9 @@ export interface Heatmap {
    */
   foreign_1d: (number | null)[];
   /**
-   * 每週最後一個交易日
+   * 每週最後一個交易日（時間軸的長度）
    */
   weeks: string[];
-  /**
-   * 各週還原報酬（%）
-   */
-  ret: (number | null)[][];
-  /**
-   * 各週外資估算買賣超（億元）
-   */
-  foreign: (number | null)[][];
 }
 export interface HeatItem {
   symbol: string;
@@ -810,4 +803,18 @@ export interface HeatItem {
    * 市值（億元）＝最新收盤 × 發行股數
    */
   cap: number;
+}
+/**
+ * data/market/heatmap-history.json：熱力圖各週的歷史。第一維是週、第二維與 heatmap.json 的 items 對齊。
+ */
+export interface HeatmapHistory {
+  weeks: string[];
+  /**
+   * 各週還原報酬（%）
+   */
+  ret: (number | null)[][];
+  /**
+   * 各週外資估算買賣超（億元）
+   */
+  foreign: (number | null)[][];
 }
