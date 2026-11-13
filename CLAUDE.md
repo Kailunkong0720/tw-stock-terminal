@@ -76,7 +76,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\refresh_publish.ps1 
 
 ## 自動接續的注意事項（2026-11-13）
 
-- 背景工作：`ingest flows`、`ingest mops`、`backtest`。用 `uv run python -m pipeline status` 看鎖檔；在跑就不要重啟；「已結束（殘留鎖檔）」代表中斷了，用 `scripts\start_bg.ps1` 重新啟動（會從中斷處續跑）
+- **回測暫停**（2026-11-13 15:20 使用者要求）：使用者晚上換到有 NVIDIA 顯示卡的電腦再跑模型。這台電腦**不要重啟 `backtest` 或 `forecast`**（已存 1,631 次、11 個基準日，可續跑）。搬機步驟見 [docs/move-to-gpu.md](docs/move-to-gpu.md)
+- 背景工作：`ingest flows`、`ingest mops`、`backtest`（暫停中，見上）。用 `uv run python -m pipeline status` 看鎖檔；在跑就不要重啟；「已結束（殘留鎖檔）」代表中斷了，用 `scripts\start_bg.ps1` 重新啟動（會從中斷處續跑）
 - flows 與 mops 完成後執行一次 `scripts\refresh_publish.ps1`；回測完成後再執行一次
 - 新聞來源已定：**GDELT DOC 2.0、最近三個月**（2026-11-13 使用者決定），可以實作與回補：一輪抓完存起來，不重複抓（2026-11-13 上午本機被 GDELT 限流 429，要長時間退避）；**不做** LLM 抽取（2026-11-13 使用者沒有 API 金鑰；新聞標題用規則分類）
 - 3D 地球已完成（隔夜傳導＋全球供應鏈）；分析說明已完成（每項分析的方法／計算時間／資料期間）

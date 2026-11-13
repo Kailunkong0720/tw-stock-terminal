@@ -59,9 +59,13 @@ class KronosEngine:
         self._stamps = calc_time_stamps
         self.lookback, self.pred_len, self.n_paths = lookback, pred_len, n_paths
         t0 = time.time()
-        self.tokenizer = KronosTokenizer.from_pretrained(TOKENIZER_REPO).eval()
-        self.model = Kronos.from_pretrained(MODEL_REPO).eval()
-        log.info("載入 %s（%.1f 秒），執行緒 %d", MODEL_NAME, time.time() - t0, torch.get_num_threads())
+        # 有 NVIDIA 顯示卡（且安裝了 CUDA 版 torch）就用 GPU；可用環境變數 TWST_DEVICE=cpu／cuda 強制指定
+        self.device = os.environ.get("TWST_DEVICE") or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.tokenizer = KronosTokenizer.from_pretrained(TOKENIZER_REPO).eval().to(self.device)
+        self.model = Kronos.from_pretrained(MODEL_REPO).eval().to(self.device)
+        log.info(
+            "載入 %s（%.1f 秒），裝置 %s，執行緒 %d", MODEL_NAME, time.time() - t0, self.device, torch.get_num_threads()
+        )
 
     def sample_paths(self, inp: pd.DataFrame, future: list[date], seed: int) -> np.ndarray:
         """回傳 (n_paths, pred_len) 的還原收盤價路徑。"""
@@ -76,9 +80,9 @@ class KronosEngine:
         preds = self._infer(
             self.tokenizer,
             self.model,
-            torch.from_numpy(np.repeat(xn[None], n, 0)),
-            torch.from_numpy(np.repeat(xs[None], n, 0)),
-            torch.from_numpy(np.repeat(ys[None], n, 0)),
+            torch.from_numpy(np.repeat(xn[None], n, 0)).to(self.device),
+            torch.from_numpy(np.repeat(xs[None], n, 0)).to(self.device),
+            torch.from_numpy(np.repeat(ys[None], n, 0)).to(self.device),
             512,
             self.pred_len,
             clip=5,
